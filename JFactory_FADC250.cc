@@ -18,6 +18,10 @@ JFactory_FADC250::JFactory_FADC250() {
     // Set the type name of this class, in order to have more informative error messages
     SetTypeName(NAME_OF_THIS);
 
+    // Set the default prefix. This is a unique name for this factory that is used as a prefix for parameters.
+    // In ePIC, this is usually overridden by the JOmniFactoryGenerator
+    SetPrefix("fadc250_factory");
+
     // If you declare an input as optional, JANA2 won't throw an exception if it can't find it. When you try to access
     // the missing input, it will present as an empty vector.
     //   m_hits_in.SetOptional(true);
@@ -56,7 +60,7 @@ void JFactory_FADC250::Process(const JEvent& event) {
 
     // The Input helpers will already have been filled by the time Execute() gets called. You can access
     // the data using the () operator. Parameter values may also be accessed using the () operator.
-    std::shared_ptr<evio::EvioEvent> evio_event = m_hits_in()[0]->evio_event;
+    std::shared_ptr<evio::EvioEvent> evio_event = m_hits_in().at(0)->evio_event;
     std::vector<std::shared_ptr<evio::BaseStructure>> &children = evio_event->getChildren();
     std::shared_ptr<evio::BaseStructure> &second_child = children[1];
     std::vector<std::shared_ptr<evio::BaseStructure>> &second_subchilds = second_child->getChildren();
