@@ -18,13 +18,20 @@ set(SOURCES
     JEventSource_EVIO.cc
     JEventProcessor_MOLLER.cc
     JFactory_FADC250.cc
+    parsers/EvioEventParser.cc
+    parsers/RawDataParser.cc
 )
 
 # Create executable
 add_executable(moller ${SOURCES})
 
 # Include directories
-target_include_directories(moller PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(moller
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/data_objects
+        ${CMAKE_CURRENT_SOURCE_DIR}/parsers
+)
 
 # Link libraries
 target_link_libraries(moller

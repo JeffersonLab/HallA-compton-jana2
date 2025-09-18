@@ -1,5 +1,6 @@
 
 #include "JFactory_FADC250.h"
+#include "EvioEventParser.h"
 
 #include <JANA/JEvent.h>
 
@@ -61,30 +62,15 @@ void JFactory_FADC250::Process(const JEvent& event) {
     // The Input helpers will already have been filled by the time Execute() gets called. You can access
     // the data using the () operator. Parameter values may also be accessed using the () operator.
     std::shared_ptr<evio::EvioEvent> evio_event = m_hits_in().at(0)->evio_event;
-    std::vector<std::shared_ptr<evio::BaseStructure>> &children = evio_event->getChildren();
-    std::shared_ptr<evio::BaseStructure> &second_child = children[1];
-    std::vector<std::shared_ptr<evio::BaseStructure>> &second_subchilds = second_child->getChildren();
-    uint32_t chan, q, t;
-    std::vector<FADC250*> fadc_out_hits;
-
-    for(auto subchild: second_subchilds) {
-        if(subchild->getHeader()->getDataType() == evio::DataType::UINT32) {
-            std::vector<uint32_t> data_points = subchild->getUIntData();
-            for(auto data: data_points) {
-                chan = (data>>13) & 0x000F;
-                q    = (data>>0 ) & 0x1FFF;
-                t    = ((data>>17) & 0x3FFF)*4;
-                std::cout<<"\t chan: "<<chan<<", q: "<<q<<", t: "<<t<<std::endl;
-
-                FADC250* hit = new FADC250(chan, q, t);
-                fadc_out_hits.push_back(hit);  
-            }
-        }
-    }
+    auto evio_event_parser = std::make_unique<EvioEventParser>(evio_event);
+    evio_event_parser->parse();
+    // event.SetEventNumber(evio_event_parser->getEventNumber());
+    std::shared_ptr<EventHits> hits = evio_event_parser->getHits();
 
     // While you are inside Execute(), you can populate your output databundles however you like. Once Execute()
     // returns, JANA2 will store and retrieve them automatically.
-     m_hits_out() = fadc_out_hits;
+     m_waveform_hits_out() = hits->waveforms;
+     m_pulse_hits_out() = hits->pulses;
 }
 
 void JFactory_FADC250::Finish() {

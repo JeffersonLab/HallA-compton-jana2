@@ -5,12 +5,13 @@
 #include <fstream>
 
 #include <JANA/JEventProcessor.h>
-#include "FADC250.h"
+#include "EventHits.h"
 
 class JEventProcessor_MOLLER : public JEventProcessor {
 
-    Input<FADC250> m_hits_in {this};
-    std::ofstream m_output_file;
+    Input<FADC250WaveformHit> m_waveform_hits_in {this};
+    Input<FADC250PulseHit> m_pulse_hits_in {this};
+    std::ofstream m_outfile;
 
 public:
 

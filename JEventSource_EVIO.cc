@@ -1,6 +1,7 @@
 
 #include "JEventSource_EVIO.h"
 #include "EvioEventWrapper.h"
+#include "EvioEventParser.h"
 
 #include <JANA/JApplication.h>
 #include <JANA/JEvent.h>
@@ -55,8 +56,15 @@ JEventSource::Result JEventSource_EVIO::Emit(JEvent& event) {
         return Result::FailureTryAgain;
     }
 
+    // Check if this is a run control event. Apart from extracting the run number,
+    // these events are not useful for further processing, so get run number and skip.
+    if (EvioEventParser::isRunControlEvent(evio_event, m_run_number)) {
+        return Result::FailureTryAgain;
+    }
+
     EvioEventWrapper* wrapper = new EvioEventWrapper(evio_event); 
     event.SetEventNumber(evio_event->getEventNumber());
+    event.SetRunNumber(m_run_number);
     event.Insert(wrapper);  // can't pass in shared ptr directly so to avoid deletion of evio_event passing it inside wrapper
     return Result::Success;
 
