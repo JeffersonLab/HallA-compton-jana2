@@ -117,6 +117,15 @@ After building, run the application with:
 
 The application will process the specified EVIO files and output detector hit information to `output.txt`.
 
+### Customizing Output Filename
+
+You can specify a custom output filename using the `OUTPUT_FILENAME` parameter:
+
+```bash
+./build/moller -POUTPUT_FILENAME=my_results.txt <evio_file1> [evio_file2] ...
+
+```
+
 ## Project Structure
 
 ### Core Application Files
