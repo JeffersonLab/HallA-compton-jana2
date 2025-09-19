@@ -2,17 +2,17 @@
 
 A JANA2-based application for processing FADC250 detector data from EVIO-format files. For now, the application supports extracting and decoding FADC250 data only if each EVIO event contains exactly one detector event.
 
-## Overview
+## Data Processing Flow
 
-This application provides the following pipeline for processing FADC250 data:
-- EVIO file reading and event parsing
-- Run control event detection and run number extraction
-- FADC250 hit extraction (both waveform and pulse data)
-- Structured data output for analysis
+1. **Event Source** reads EVIO files, extracts run numbers from control events (skipping them), and adds physics events to the processing queue
+2. **Factory** fetches these events and passes them to the EVIO event parser 
+3. **EVIO Event Parser** do evio event level parsing and delegates raw data parsing to Raw Data Parser
+4. **Raw Data Parser** parses raw data and creates hit objects with extracted data
+5. **Processor** consumes these hit objects and outputs the results to a text file
 
 ## Hardware Configuration
 
-This application was developed and tested using data from the following hardware configuration:
+This application was developed and tested using data from following:
 
 - **FADC250 Module**: 1 unit at crate 1, slot 3
 - **Data Bank ID**: 250
