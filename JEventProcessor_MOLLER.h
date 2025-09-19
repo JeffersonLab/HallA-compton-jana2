@@ -32,7 +32,7 @@ private:
      * - default_value: "output.txt" - default filename if not specified
      * - description: "Output file name" - help text for the parameter
      * - is_shared: if true, the parameter name is used as-is;  
-     *              if false, the component's prefix (set in the constructor) is prepended to the name.
+     *              if false (default), the component's prefix (set in the constructor) is prepended to the name.
      * 
      */
     Parameter<std::string> m_out_filename {this, "OUTPUT_FILENAME", "output.txt", "Output file name", true};

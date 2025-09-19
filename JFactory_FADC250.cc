@@ -67,7 +67,7 @@ void JFactory_FADC250::ChangeRun(const JEvent& event) {
  * @param event Reference to the JANA2 event to process
  */
 void JFactory_FADC250::Process(const JEvent& event) {
-    LOG_DEBUG(GetLogger()) << "Inside Execute() with run_number=" << event.GetRunNumber()
+    LOG_DEBUG(GetLogger()) << "Inside Process() with run_number=" << event.GetRunNumber()
                           << ", event_number=" << event.GetEventNumber();
 
     // Get the EVIO event
@@ -77,7 +77,7 @@ void JFactory_FADC250::Process(const JEvent& event) {
     auto evio_event_parser = std::make_unique<EvioEventParser>(evio_event);
     evio_event_parser->parse();
     
-    // TODO: Add ability in JANA to set event number from inside the factory
+    // TODO(JANA Issue #471): Allow setting event number from inside the factory
     // event.SetEventNumber(evio_event_parser->getEventNumber()); 
     
     // Get the parsed hits from the parser
