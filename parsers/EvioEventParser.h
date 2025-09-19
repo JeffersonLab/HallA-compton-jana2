@@ -65,6 +65,7 @@ public:
      * @return EventHits structure containing all parsed hits
      */
     std::shared_ptr<EventHits> getHits() const;
+    
      /**
      * Identifies run control events and extracts run number from prestart events
      * 

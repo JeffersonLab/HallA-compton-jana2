@@ -6,7 +6,9 @@ void EvioEventParser::parse() {
     std::shared_ptr<evio::BaseStructureHeader> header = m_event->getHeader();
     
     uint8_t nblock_events = header->getNumber();
-    assert(nblock_events == 1);
+    if(nblock_events > 1) {
+        throw JException("EvioEventParser::parse: block has more than one events - NOT SUPPORTED YET");
+    }
 
     // Get Trigger Bank + Data Banks
     auto& children = m_event->getChildren();
@@ -37,8 +39,10 @@ std::vector<std::shared_ptr<evio::BaseStructure>> EvioEventParser::parseTriggerB
         }
     }
     
-    assert(trigger_bank_rocs_count == trigger_bank_rocs_data.size());
-    
+    if(trigger_bank_rocs_count != trigger_bank_rocs_data.size()) {
+        throw JException("EvioEventParser::parseTriggerBank: #ROC segments != header #ROCS -- %d != %d", trigger_bank_rocs_count, trigger_bank_rocs_data.size());
+    }
+
     return trigger_bank_rocs_data;
 }
 
@@ -47,7 +51,9 @@ void EvioEventParser::parseDataBanks(const std::vector<std::shared_ptr<evio::Bas
     
     // Validate data banks count
     // #ROCs == #TriggerBankROCsegments == #RemainingBanksAfterTriggerBank 
-    assert(data_banks.size() == trigger_bank_roc_segments.size());
+    if(data_banks.size() != trigger_bank_roc_segments.size()) {
+        throw JException("EvioEventParser::parseDataBanks: #ROC databanks != #ROC segments in trigger bank -- %d != %d", data_banks.size(), trigger_bank_roc_segments.size());
+    }
     
     // Parse data banks using RawDataParser
     for (size_t i = 0; i < data_banks.size(); i++) {
@@ -56,7 +62,9 @@ void EvioEventParser::parseDataBanks(const std::vector<std::shared_ptr<evio::Bas
         uint32_t tb_rocid = tb->getHeader()->getTag();
         uint32_t db_rocid = (db->getHeader()->getTag()) & 0x0FFF;
         
-        assert(tb_rocid == db_rocid);
+        if(tb_rocid != db_rocid) {
+            throw JException("EvioEventParser::parseDataBanks: Trigger bank roc segment rocid != Data bank rocid -- %d != %d", tb_rocid, db_rocid);
+        }
         
         auto data_blocks = db->getChildren();
         for (auto dbb : data_blocks) {
@@ -66,12 +74,16 @@ void EvioEventParser::parseDataBanks(const std::vector<std::shared_ptr<evio::Bas
 }
 
 uint64_t EvioEventParser::getEventNumber() const {
-    assert(m_is_parsed);
+    if(!m_is_parsed) {
+        throw JException("EvioEventParser::getEventNumber: Trying to get event_num before the event is parsed");
+    }
     return m_event_num;
 }
 
 std::shared_ptr<EventHits> EvioEventParser::getHits() const {
-    assert(m_is_parsed);
+    if(!m_is_parsed) {
+        throw JException("EvioEventParser::getHits: Trying to get hits before the event is parsed");
+    }
     return m_hits;
 }
 

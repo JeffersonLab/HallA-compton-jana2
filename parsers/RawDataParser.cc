@@ -1,4 +1,5 @@
 #include "RawDataParser.h"
+#include <JANA/JException.h>
 
 void RawDataParser::parseRawData(std::shared_ptr<evio::BaseStructure> data_block, 
                                 uint32_t rocid, 
@@ -23,22 +24,42 @@ void RawDataParser::parseRawData(std::shared_ptr<evio::BaseStructure> data_block
                 module_id = getBitsInRange(d, 21, 18);
                 block_nevents = getBitsInRange(d, 7, 0);
             } else if (data_type == 1) { // block trailer
-                assert(block_nevents == 0);
+                if (block_nevents != 0) {
+                    throw JException(
+                        "RawDataParser::parseRawData: Invalid data format — block trailer word before reading in all events"
+                    );
+                }
                 block_nevents = -1;
             } else if (data_type == 2) { // event header
-                assert(block_nevents > 0);
+                if (block_nevents <= 0) {
+                    throw JException(
+                        "RawDataParser::parseRawData: Invalid data format — event header before block header"
+                    );
+                }
                 block_nevents--;
                 auto eh_slot = getBitsInRange(d, 26, 22);
-                (void)eh_slot; // Suppress unused variable warning
-                assert(eh_slot == block_slot);
+                if (eh_slot != block_slot) {
+                    throw JException(
+                        "RawDataParser::parseRawData: Invalid data — event slot(%d) !=  block slot(%d)", 
+                        eh_slot, block_slot
+                    );
+                }
                 trigger_num = getBitsInRange(d, 21, 0);
             } else if (data_type == 3) { // trigger time
-                assert(block_nevents != -1);
+                if (block_nevents < 0) {
+                    throw JException(
+                        "RawDataParser::parseRawData: Invalid data format — trigger time word before block & event header"
+                    );
+                }
                 timestamp1 = getBitsInRange(d, 23, 0);
                 auto d2 = data_words[++j];
                 timestamp2 = getBitsInRange(d2, 23, 0);
             } else if (data_type == 4) { // waveform data
-                assert(block_nevents != -1);
+                if (block_nevents < 0) {
+                    throw JException(
+                        "RawDataParser::parseRawData: Invalid data format — waveform data word before block & event header"
+                    );
+                }
                 uint32_t chan = getBitsInRange(d, 26, 23);
                 uint32_t waveform_len = getBitsInRange(d, 11, 0);
                 
@@ -48,7 +69,11 @@ void RawDataParser::parseRawData(std::shared_ptr<evio::BaseStructure> data_block
                 );
                 event_hits->waveforms.push_back(new FADC250WaveformHit(hit));
             } else if (data_type == 9) { // pulse data
-                assert(block_nevents != -1);
+                if (block_nevents < 0) {
+                    throw JException(
+                        "RawDataParser::parseRawData: Invalid data format — pulse data word before block & event header"
+                    );
+                }
                 uint32_t chan = getBitsInRange(d, 18, 15);
                 uint32_t pedestal_quality = getBitsInRange(d, 14, 14);
                 uint32_t pedestal_sum = getBitsInRange(d, 13, 0);
@@ -90,8 +115,11 @@ FADC250WaveformHit RawDataParser::parseWaveformData(
         
         auto ww = data_words[k]; // waveform word
         auto ww_word_type = getBitsInRange(ww, 31, 31);
-        (void)ww_word_type; // Suppress unused variable warning
-        assert(ww_word_type == 0);
+        if (ww_word_type != 0) {
+            throw JException(
+                "RawDataParser::parseWaveformData: Invalid data format — lesser words than required for getting all waveform samples"
+            );
+        }
         
         auto x_notvalid = getBitsInRange(ww, 29, 29);
         if (!x_notvalid) {
@@ -103,8 +131,12 @@ FADC250WaveformHit RawDataParser::parseWaveformData(
             hit.addSample(getBitsInRange(ww, 12, 0));
         }
     }
-    
-    assert(waveform_len == hit.getWaveformSize());
+    if (waveform_len != hit.getWaveformSize()) {
+        throw JException(
+            "RawDataParser::parseWaveformData: Invalid data — Header given waveform size (%d) != Obtained waveform size (%d)",
+            waveform_len, hit.getWaveformSize()
+        );
+    }
     index += nwaveform_words; // skip over waveform continuation words
     
     return hit;
