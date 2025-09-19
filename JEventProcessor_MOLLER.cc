@@ -23,7 +23,7 @@ void JEventProcessor_MOLLER::Init() {
     LOG << "JEventProcessor_MOLLER::Init" << LOG_END;
     
     // Open the output file for writing hit information
-    m_outfile.open("output.txt", std::ios::out);
+    m_outfile.open(m_out_filename(), std::ios::out);
     if (!m_outfile.is_open()) {
         throw JException("Error opening output.txt!");
     }
