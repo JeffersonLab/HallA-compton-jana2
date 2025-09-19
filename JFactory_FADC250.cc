@@ -4,44 +4,40 @@
 
 #include <JANA/JEvent.h>
 
-//- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-// Please add the following lines to your InitPlugin or similar routine
-// in order to register this factory with the system.
-//
-// #include "JFactory_FADC250.h"
-//
-//     app->Add( new JFactoryGeneratorT<JFactory_FADC250>() );
-//- - - - - - - - - - - - - - - - - - - - - - - - - -JFactory_FADC250
-
+/**
+ * @brief Constructor for JFactory_FADC250
+ * 
+ * Initializes the factory with the appropriate type name and prefix.
+ * Sets up the factory for processing EVIO events and creating FADC250 hits.
+ */
 JFactory_FADC250::JFactory_FADC250() {
 
-
-    // Set the type name of this class, in order to have more informative error messages
+    // Set the type name of this class for more informative error messages
     SetTypeName(NAME_OF_THIS);
 
-    // Set the default prefix. This is a unique name for this factory that is used as a prefix for parameters.
+    // Set the default prefix for this factory (used as prefix for parameters)
     // In ePIC, this is usually overridden by the JOmniFactoryGenerator
     SetPrefix("fadc250_factory");
 
-    // If you declare an input as optional, JANA2 won't throw an exception if it can't find it. When you try to access
-    // the missing input, it will present as an empty vector.
-    //   m_hits_in.SetOptional(true);
+    // Optional: Set inputs as optional if they might not always be present
+    // m_hits_in.SetOptional(true);
 
-    // Set factory flags here, as needed.
-    //   m_hits_out.SetNotOwnerFlag(true);
-    // Note that when there are multiple outputs, the NOT_OBJECT_OWNER flag should be set on the Output, not on the factory itself.
-    // Setting NOT_OBJECT_OWNER on a factory really means setting NOT_OBJECT_OWNER on the factory's _fiJFactory_FADC250d JFactory_FADC250::Init() {
+    // Optional: Set factory flags as needed
+    // m_hits_out.SetNotOwnerFlag(true);
+    // Note: When there are multiple outputs, the NOT_OBJECT_OWNER flag should be set
+    // on the Output, not on the factory itself.
 }
 
+/**
+ * @brief Initialize the factory
+ * 
+ * Called once at the start of processing to set up the factory.
+ * By the time Init() is called:
+ * - Logger has been configured
+ * - Declared Parameter values have been fetched
+ * - Declared Services have been fetched
+ */
 void JFactory_FADC250::Init() {
-    // Init() is called sequentially before any processing starts. It is safe to modify state
-    // that is not a member variable of the factory itself.
-
-    // By the time Init() is called,
-    // - Logger has been configured
-    // - Declared Parameter values have been fetched
-    // - Declared Services have been fetched
-
     LOG_DEBUG(GetLogger()) << "Inside Init()";
 
     // Unlike v1, you don't have to fetch any parameters or services in here, as this is done automatically now.
@@ -49,30 +45,55 @@ void JFactory_FADC250::Init() {
     // This is also where you should initialize your algorithm, if necessary.
 }
 
+/**
+ * @brief Handle run changes
+ * 
+ * Called when the run number changes during processing.
+ * This is where you should fetch any data from your JServices that IS keyed off of the run number.
+ * 
+ * @param event Reference to the current JANA2 event
+ */
 void JFactory_FADC250::ChangeRun(const JEvent& event) {
     LOG_DEBUG(GetLogger()) << "Inside ChangeRun() with run_number=" << event.GetRunNumber();
-
-    // This is where you should fetch any data from your JServices that IS keyed off of the run number
 }
 
+/**
+ * @brief Process an event
+ * 
+ * This method processes the event. The input helpers are already filled by the time
+ * this method is called. You can access the data using the () operator. 
+ * Parameter values may also be accessed using the () operator.
+ * 
+ * @param event Reference to the JANA2 event to process
+ */
 void JFactory_FADC250::Process(const JEvent& event) {
     LOG_DEBUG(GetLogger()) << "Inside Execute() with run_number=" << event.GetRunNumber()
                           << ", event_number=" << event.GetEventNumber();
 
-    // The Input helpers will already have been filled by the time Execute() gets called. You can access
-    // the data using the () operator. Parameter values may also be accessed using the () operator.
+    // Get the EVIO event
     std::shared_ptr<evio::EvioEvent> evio_event = m_hits_in().at(0)->evio_event;
+    
+    // Create and use the EVIO event parser to extract hits
     auto evio_event_parser = std::make_unique<EvioEventParser>(evio_event);
     evio_event_parser->parse();
-    // event.SetEventNumber(evio_event_parser->getEventNumber());
+    
+    // TODO: Add ability in JANA to set event number from inside the factory
+    // event.SetEventNumber(evio_event_parser->getEventNumber()); 
+    
+    // Get the parsed hits from the parser
     std::shared_ptr<EventHits> hits = evio_event_parser->getHits();
 
-    // While you are inside Execute(), you can populate your output databundles however you like. Once Execute()
-    // returns, JANA2 will store and retrieve them automatically.
-     m_waveform_hits_out() = hits->waveforms;
-     m_pulse_hits_out() = hits->pulses;
+    // Populate the output data bundles
+    // JANA2 will store and retrieve them automatically once this method returns
+    m_waveform_hits_out() = hits->waveforms;
+    m_pulse_hits_out() = hits->pulses;
 }
 
+/**
+ * @brief Finish processing and cleanup
+ * 
+ * Called once at the end of processing to perform cleanup.
+ */
 void JFactory_FADC250::Finish() {
     LOG_DEBUG(GetLogger()) << "Inside Finish()";
 }

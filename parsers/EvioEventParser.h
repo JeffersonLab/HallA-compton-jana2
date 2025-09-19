@@ -75,7 +75,7 @@ public:
      * 
      * @param event The EVIO event to examine
      * @param run_number Reference to run number (updated if prestart event found)
-     * @return True if this was any run control event, false if regular physics event
+     * @return true if this was any run control event, false otherwise
      */
     static bool isRunControlEvent(std::shared_ptr<evio::EvioEvent> event, int& run_number);
    
