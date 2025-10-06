@@ -10,26 +10,34 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(JANA REQUIRED)
 
 # Find EVIO library
+# EVIO provides support for reading EVIO format data files
 find_package(evio REQUIRED)
 
 # Specify source files
 set(SOURCES
-    moller.cc
-    JEventSource_EVIO.cc
-    JEventProcessor_MOLLER.cc
-    JFactory_FADC250.cc
+    moller.cc                    # Main application entry point
+    JEventSource_EVIO.cc         # Custom EVIO event source
+    JEventProcessor_MOLLER.cc    # Main event processor
+    JFactory_FADC250.cc          # Factory for FADC250 detector data
+    parsers/EvioEventParser.cc   # EVIO event parsing utilities
+    parsers/RawDataParser.cc     # Raw data parsing utilities
 )
 
-# Create executable
+# Create the main executable
 add_executable(moller ${SOURCES})
 
 # Include directories
-target_include_directories(moller PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(moller
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}           # Main source directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/data_objects  # Data object definitions
+        ${CMAKE_CURRENT_SOURCE_DIR}/parsers       # Parser utilities
+)
 
-# Link libraries
+# Link required libraries to the executable
 target_link_libraries(moller
     PRIVATE
-        ${JANA_LIBRARY}
-        evio::eviocc
+        ${JANA_LIBRARY}    # JANA2 framework library
+        evio::eviocc       # EVIO C++ library for data I/O
 )
 

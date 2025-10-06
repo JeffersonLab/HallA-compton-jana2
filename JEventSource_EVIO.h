@@ -11,12 +11,18 @@
 
 #include "eviocc.h"
 
-
+/**
+ * @class JEventSource_EVIO
+ * @brief JANA2 event source for reading EVIO format data files
+ * 
+ * This class handles the reading of EVIO files and creation of events
+ * for the MOLLER experiment data processing pipeline.
+ */
 class JEventSource_EVIO : public JEventSource {
 
-    /// Add member variables here
-    std::unique_ptr<evio::EvioReader> m_evio_reader;
-    int m_event_num = 0;
+private:
+    std::unique_ptr<evio::EvioReader> m_evio_reader;  ///< EVIO file reader instance
+    int m_run_number = 0;                             ///< Current run number
 
 public:
     JEventSource_EVIO();
