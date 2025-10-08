@@ -26,6 +26,7 @@
 JEventSource_EVIO::JEventSource_EVIO() : JEventSource() {
     SetTypeName(NAME_OF_THIS);                    // Provide JANA with class name
     SetCallbackStyle(CallbackStyle::ExpertMode);
+    EnableProcessParallel(true);
 }
 
 /**
@@ -89,6 +90,17 @@ JEventSource::Result JEventSource_EVIO::Emit(JEvent& event) {
     event.SetRunNumber(m_run_number);
     event.Insert(wrapper);  // can't pass in shared ptr directly so to avoid deletion of evio_event passing it inside wrapper
     return Result::Success;
+}
+
+/**
+ * @brief Trigger the parsing factory immediately, in order to obtain the event number
+ * 
+ * 
+ * @param event Reference to the JANA2 event to populate
+ */
+void JEventSource_EVIO::ProcessParallel(JEvent& event) const {
+    auto evt_nr = event.Get<int>("event_number");
+    event.SetEventNumber(*evt_nr.at(0));
 }
 
 /**
