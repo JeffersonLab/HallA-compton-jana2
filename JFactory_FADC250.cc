@@ -19,6 +19,8 @@ JFactory_FADC250::JFactory_FADC250() {
     // In ePIC, this is usually overridden by the JOmniFactoryGenerator
     SetPrefix("fadc250_factory");
 
+    // Short name distinguishes this output when multiple outputs have the same type (e.g. int).
+    // Usage: event.Get<int>("event_number") retrieves this specific output.
     m_event_number_out.SetShortName("event_number");
 
     // Optional: Set inputs as optional if they might not always be present
