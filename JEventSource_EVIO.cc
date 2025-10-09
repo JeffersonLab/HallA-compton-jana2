@@ -86,17 +86,21 @@ JEventSource::Result JEventSource_EVIO::Emit(JEvent& event) {
 
     // Create a wrapper for the EVIO event and add it to the JANA2 event
     EvioEventWrapper* wrapper = new EvioEventWrapper(evio_event); 
-    event.SetEventNumber(evio_event->getEventNumber());
     event.SetRunNumber(m_run_number);
     event.Insert(wrapper);  // can't pass in shared ptr directly so to avoid deletion of evio_event passing it inside wrapper
     return Result::Success;
 }
 
 /**
- * @brief Trigger the parsing factory immediately, in order to obtain the event number
+ * @brief Called after Emit(), processes events in parallel
  * 
+ * Triggers JFactory_FADC250 via event.Get<int>("event_number") to parse and
+ * extract the event number from EVIO data, then assigns it via SetEventNumber().
  * 
- * @param event Reference to the JANA2 event to populate
+ * Flow: ::Emit inserts EvioEventWrapper → ::ProcessParallel triggers factory
+ * in parallel → factory parses event_number → SetEventNumber() assigns it
+ * 
+ * @param event JANA2 event to populate with event number
  */
 void JEventSource_EVIO::ProcessParallel(JEvent& event) const {
     auto evt_nr = event.Get<int>("event_number");
