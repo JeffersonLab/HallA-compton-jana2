@@ -23,6 +23,7 @@ private:
     // Declare Outputs
     Output<FADC250WaveformHit> m_waveform_hits_out{this};
     Output<FADC250PulseHit> m_pulse_hits_out{this};
+    Output<int> m_event_number_out{this};
 
 public:
     JFactory_FADC250();

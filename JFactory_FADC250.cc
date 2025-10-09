@@ -19,6 +19,8 @@ JFactory_FADC250::JFactory_FADC250() {
     // In ePIC, this is usually overridden by the JOmniFactoryGenerator
     SetPrefix("fadc250_factory");
 
+    m_event_number_out.SetShortName("event_number");
+
     // Optional: Set inputs as optional if they might not always be present
     // m_hits_in.SetOptional(true);
 
@@ -77,9 +79,6 @@ void JFactory_FADC250::Process(const JEvent& event) {
     auto evio_event_parser = std::make_unique<EvioEventParser>(evio_event);
     evio_event_parser->parse();
     
-    // TODO(JANA Issue #471): Allow setting event number from inside the factory
-    // event.SetEventNumber(evio_event_parser->getEventNumber()); 
-    
     // Get the parsed hits from the parser
     std::shared_ptr<EventHits> hits = evio_event_parser->getHits();
 
@@ -87,6 +86,9 @@ void JFactory_FADC250::Process(const JEvent& event) {
     // JANA2 will store and retrieve them automatically once this method returns
     m_waveform_hits_out() = hits->waveforms;
     m_pulse_hits_out() = hits->pulses;
+
+    // Lets us pass the event number back to the event source so that it can be set
+    m_event_number_out().push_back(new int(evio_event_parser->getEventNumber()));
 }
 
 /**
