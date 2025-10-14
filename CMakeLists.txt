@@ -13,6 +13,10 @@ find_package(JANA REQUIRED)
 # EVIO provides support for reading EVIO format data files
 find_package(evio REQUIRED)
 
+# Find ROOT
+# ROOT provides TFile, TTree, and histogram functionality
+find_package(ROOT REQUIRED COMPONENTS Core RIO Tree Hist)
+
 # Specify source files
 set(SOURCES
     moller.cc                    # Main application entry point
@@ -37,7 +41,11 @@ target_include_directories(moller
 # Link required libraries to the executable
 target_link_libraries(moller
     PRIVATE
-        ${JANA_LIBRARY}    # JANA2 framework library
-        evio::eviocc       # EVIO C++ library for data I/O
+        ${JANA_LIBRARY}      # JANA2 framework library
+        evio::eviocc         # EVIO C++ library for data I/O
+        ROOT::Core           # ROOT core functionality
+        ROOT::RIO            # ROOT file I/O (TFile)
+        ROOT::Tree           # ROOT TTree functionality
+        ROOT::Hist           # ROOT histogram functionality (TH1)
 )
 

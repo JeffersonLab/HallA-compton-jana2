@@ -6,9 +6,9 @@ A JANA2-based application for processing FADC250 detector data from EVIO-format 
 
 1. **Event Source** reads EVIO files, extracts run numbers from control events (skipping them), and adds physics events to the processing queue
 2. **Factory** fetches these events and passes them to the EVIO event parser 
-3. **EVIO Event Parser** do evio event level parsing and delegates raw data parsing to Raw Data Parser
+3. **EVIO Event Parser** does EVIO event level parsing and delegates raw data parsing to Raw Data Parser
 4. **Raw Data Parser** parses raw data and creates hit objects with extracted data
-5. **Processor** consumes these hit objects and outputs the results to a text file
+5. **Processor** consumes these hit objects and outputs the results to a ROOT file
 
 ## Hardware Configuration
 
@@ -25,10 +25,11 @@ Before building this application, ensure you have:
 - CMake 3.16 or higher
 - C++20 compatible compiler
 - Git (for cloning dependencies)
+- ROOT 6.3x.x (for data analysis and visualization)
 
 ## Dependencies
 
-This project requires two main dependencies that must be built separately:
+This project requires the following dependencies:
 
 ### 1. JANA2 Framework
 
@@ -57,6 +58,12 @@ cmake -S . -B build
 cmake --build build --target install --parallel
 ```
 
+### 3. Building ROOT
+
+**For ifarm users**: Use the pre-built version at `/group/halld/Software/builds/Linux_Alma9-x86_64-gcc11.5.0/root/root-6.32.08`
+
+**For other systems**: Install ROOT following the guide at https://root.cern/install/
+
 ## Building the Application
 
 ### Build Instructions
@@ -64,11 +71,13 @@ cmake --build build --target install --parallel
 1. **Configure the build:**
 
 ```bash
-cmake -S . -B build -DCMAKE_PREFIX_PATH="/path/to/JANA2;/path/to/EVIO/Linux-x86_64"
+cmake -S . -B build -DCMAKE_PREFIX_PATH="/path/to/JANA2;/path/to/EVIO/Linux-x86_64;/path/to/ROOT"
 ```
 
-* Replace `/path/to/JANA2` with the path to your JANA2 directory.
-* Replace `/path/to/EVIO` with the path to your EVIO directory.
+Replace the paths with your actual installation directories:
+- `/path/to/JANA2` - Your JANA2 directory
+- `/path/to/EVIO` - Your EVIO directory  
+- `/path/to/ROOT` - Your ROOT installation (on ifarm set it to `/group/halld/Software/builds/Linux_Alma9-x86_64-gcc11.5.0/root/root-6.32.08`)
 
 2. **Build the application:**
 
@@ -76,14 +85,9 @@ cmake -S . -B build -DCMAKE_PREFIX_PATH="/path/to/JANA2;/path/to/EVIO/Linux-x86_
 cmake --build build --parallel
 ```
 
-### Build Types
-
-- **Debug:** Add `-DCMAKE_BUILD_TYPE=Debug` to the cmake command for development and debugging.
-- **Release:** Add `-DCMAKE_BUILD_TYPE=Release` for optimized production builds.
+**Build Types**: Add `-DCMAKE_BUILD_TYPE=Debug` for debugging or `-DCMAKE_BUILD_TYPE=Release` for optimized builds.
 
 ### Complete Build Sequence
-
-For a complete build from scratch:
 
 ```bash
 # 1. Build JANA2
@@ -101,11 +105,13 @@ cmake -S . -B build
 cmake --build build --target install --parallel
 cd ..
 
-# 3. Build application
+# 3. Build application (adjust ROOT path as needed)
 cd moller_exp
-cmake -S . -B build -DCMAKE_PREFIX_PATH="/path/to/JANA2;/path/to/EVIO/Linux-x86_64"
+cmake -S . -B build -DCMAKE_PREFIX_PATH="/path/to/JANA2;/path/to/EVIO/Linux-x86_64;/path/to/ROOT"
 cmake --build build --parallel
 ```
+
+**Note**: ROOT installation is not shown here. On ifarm, use the pre-built version. On other systems, install ROOT first (see Dependencies section).
 
 ## Usage
 
@@ -115,15 +121,17 @@ After building, run the application with:
 ./build/moller [jana_options] <evio_file1> [evio_file2] ...
 ```
 
-The application will process the specified EVIO files and output detector hit information to `output.txt`.
+The application will process the specified EVIO files and create a ROOT output file (`moller.root`) containing:
+- **Waveform TTree** (`waveform_tree`): Channel-by-channel waveform data with branches for slot, channel, and waveform samples
+- **Pulse Integral Histogram** (`h_integral`): Distribution of pulse integral sums
 
 ### Customizing Output Filename
 
-You can specify a custom output filename using the `OUTPUT_FILENAME` parameter:
+You can specify a custom ROOT output filename:
 
 ```bash
-./build/moller -POUTPUT_FILENAME=my_results.txt <evio_file1> [evio_file2] ...
-
+# Customize ROOT output filename
+./build/moller -PROOT_OUT_FILENAME=my_data.root <evio_file>
 ```
 
 ## Project Structure
