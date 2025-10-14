@@ -2,7 +2,6 @@
 #ifndef _JEventProcessor_MOLLER_h_
 #define _JEventProcessor_MOLLER_h_
 
-#include <fstream>
 #include <TFile.h>
 #include <TTree.h>
 #include <TH1.h>
@@ -30,11 +29,11 @@ struct WaveformTreeRow {
  * @brief Main event processor for FADC250 detector data analysis
  * 
  * This processor receives FADC250 detector hits (both waveform and pulse hits)
- * and outputs the data in two formats:
- * 1. Text file: Detailed hit information in human-readable format
- * 2. ROOT file: Waveform tree and pulse integral histogram for analysis
+ * and outputs the data to a ROOT file containing:
+ * - Waveform TTree: Channel-by-channel waveform data
+ * - Pulse integral histogram: Distribution of pulse integral sums
  * 
- * Both output filenames can be customized via JANA2 parameters.
+ * The output filename can be customized via JANA2 parameters.
  */
 class JEventProcessor_MOLLER : public JEventProcessor {
 
@@ -44,28 +43,20 @@ private:
     Input<FADC250PulseHit> m_pulse_hits_in {this};
 
     /**
-     * @brief Text output filename parameter
+     * @brief ROOT output filename parameter
      * 
-     * This parameter allows users to specify the output filename via JANA2 configuration.
+     * This parameter allows users to specify the ROOT output filename via JANA2 configuration.
      * The parameter constructor takes the following arguments:
      * - owner: Pointer to this component (for parameter registration)
-     * - name: "TXT_OUT_FILENAME" - the parameter name used in configuration files/command line
-     * - default_value: "output.txt" - default filename if not specified
-     * - description: "Output file name for text data" - help text for the parameter
+     * - name: "ROOT_OUT_FILENAME" - the parameter name used in configuration files/command line
+     * - default_value: "moller.root" - default filename if not specified
+     * - description: "Output file name for root data" - help text for the parameter
      * - is_shared: if true, the parameter name is used as-is;  
      *              if false (default), the component's prefix (set in the constructor) is prepended to the name.
      */
-    Parameter<std::string> m_text_output_filename {this, "TXT_OUT_FILENAME", "output.txt", "Output file name for text data", true};
-    
-    /**
-     * @brief ROOT output filename parameter
-     * Allows users to specify the ROOT output filename via JANA2 configuration.
-     * Default: "moller.root"
-     */
     Parameter<std::string> m_root_output_filename {this, "ROOT_OUT_FILENAME", "moller.root", "Output file name for ROOT data", true};
 
-    // Output file streams and ROOT objects
-    std::ofstream m_text_output_file;         ///< Text output file stream for detailed hit information
+    // ROOT output objects
     TFile *m_root_output_file;                ///< ROOT file for histogram and tree storage
     WaveformTreeRow m_waveform_tree_row;      ///< Data structure holding the current row for TTree filling
     TTree *m_waveform_tree;                   ///< ROOT tree for waveform data

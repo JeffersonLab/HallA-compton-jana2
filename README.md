@@ -8,7 +8,7 @@ A JANA2-based application for processing FADC250 detector data from EVIO-format 
 2. **Factory** fetches these events and passes them to the EVIO event parser 
 3. **EVIO Event Parser** does EVIO event level parsing and delegates raw data parsing to Raw Data Parser
 4. **Raw Data Parser** parses raw data and creates hit objects with extracted data
-5. **Processor** consumes these hit objects and outputs the results to both text and ROOT files
+5. **Processor** consumes these hit objects and outputs the results to a ROOT file
 
 ## Hardware Configuration
 
@@ -61,6 +61,7 @@ cmake --build build --target install --parallel
 ### 3. Building ROOT
 
 **For ifarm users**: Use the pre-built version at `/group/halld/Software/builds/Linux_Alma9-x86_64-gcc11.5.0/root/root-6.32.08`
+
 **For other systems**: Install ROOT following the guide at https://root.cern/install/
 
 ## Building the Application
@@ -120,23 +121,17 @@ After building, run the application with:
 ./build/moller [jana_options] <evio_file1> [evio_file2] ...
 ```
 
-The application will process the specified EVIO files and create two output files:
-- **`output.txt`** - Text file with detailed hit information
-- **`moller.root`** - ROOT file containing waveform TTree and pulse integral histogram
+The application will process the specified EVIO files and create a ROOT output file (`moller.root`) containing:
+- **Waveform TTree** (`waveform_tree`): Channel-by-channel waveform data with branches for slot, channel, and waveform samples
+- **Pulse Integral Histogram** (`h_integral`): Distribution of pulse integral sums
 
-### Customizing Output Filenames
+### Customizing Output Filename
 
-You can specify custom output filenames using JANA2 parameters:
+You can specify a custom ROOT output filename:
 
 ```bash
-# Customize text output filename
-./build/moller -PTXT_OUT_FILENAME=my_results.txt <evio_file>
-
 # Customize ROOT output filename
 ./build/moller -PROOT_OUT_FILENAME=my_data.root <evio_file>
-
-# Customize both
-./build/moller -PTXT_OUT_FILENAME=hits.txt -PROOT_OUT_FILENAME=analysis.root <evio_file>
 ```
 
 ## Project Structure

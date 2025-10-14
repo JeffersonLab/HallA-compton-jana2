@@ -21,12 +21,6 @@ JEventProcessor_MOLLER::JEventProcessor_MOLLER() {
 void JEventProcessor_MOLLER::Init() {
     LOG << "JEventProcessor_MOLLER::Init" << LOG_END;
     
-    // Open the text output file for writing hit information
-    m_text_output_file.open(m_text_output_filename(), std::ios::out);
-    if (!m_text_output_file.is_open()) {
-        throw JException("Failed to open text output file: " + m_text_output_filename());
-    }
-    
     // Open the ROOT output file
     m_root_output_file = new TFile(m_root_output_filename().c_str(), "RECREATE");
     if (m_root_output_file == nullptr || m_root_output_file->IsZombie()) {
@@ -50,30 +44,16 @@ void JEventProcessor_MOLLER::Init() {
 /**
  * @brief Process a single event sequentially
  * 
- * Processes FADC250 detector data for a single event. Writes detailed hit 
- * information to text file and fills ROOT tree and histograms with waveform 
- * and pulse data. This method is called for each event in the processing pipeline.
+ * Processes FADC250 detector data for a single event. Fills ROOT tree with
+ * waveform data and histogram with pulse integral values. This method is 
+ * called for each event in the processing pipeline.
  * 
  * @param event Reference to the JANA2 event to process
  */
 void JEventProcessor_MOLLER::ProcessSequential(const JEvent &event) {
     
-    // Write event header to text file
-    m_text_output_file << "Event: " << event.GetEventNumber() << "\n";
-    
-    // Process and output FADC250 waveform hits
-    m_text_output_file << "[Waveform Hits]\n";
-    m_text_output_file << "rocid slot module_id chan timestamp1 timestamp2 nWaveformSamples\n";
+    // FADC250 waveform hits
     for (const auto& waveform_hit : m_waveform_hits_in()) {
-        // Write waveform hit data to text file
-        m_text_output_file << waveform_hit->rocid << " "
-                << waveform_hit->slot << " "
-                << waveform_hit->module_id << " "
-                << waveform_hit->chan << " "
-                << waveform_hit->timestamp1 << " "
-                << waveform_hit->timestamp2 << " "
-                << waveform_hit->getWaveformSize() << "\n";
-        
         // Fill ROOT tree with waveform data
         m_waveform_tree_row.slot = waveform_hit->slot;
         m_waveform_tree_row.chan = waveform_hit->chan;
@@ -81,32 +61,11 @@ void JEventProcessor_MOLLER::ProcessSequential(const JEvent &event) {
         m_waveform_tree->Fill();
     }
 
-    // Output FADC250 pulse hits
-    m_text_output_file << "[Pulse Hits]\n";
-    m_text_output_file << "rocid slot module_id chan timestamp1 timestamp2 pedestalSum pedestalQual integralSum integralQual coarseTime fineTime pulsePeak\n";
-    
+    // FADC250 pulse hits
     for (const auto& pulse_hit : m_pulse_hits_in()) {
-        // Write pulse hit data to text file
-        m_text_output_file << pulse_hit->rocid << " "
-                << pulse_hit->slot << " "
-                << pulse_hit->module_id << " "
-                << pulse_hit->chan << " "
-                << pulse_hit->timestamp1 << " "
-                << pulse_hit->timestamp2 << " "
-                << pulse_hit->pedestal_sum << " "
-                << pulse_hit->pedestal_quality << " "
-                << pulse_hit->integral_sum << " "
-                << pulse_hit->integral_quality << " "
-                << pulse_hit->coarse_time << " "
-                << pulse_hit->fine_time << " "
-                << pulse_hit->pulse_peak << "\n";
-        
         // Fill histogram with pulse integral values
         m_pulse_integral_hist->Fill(pulse_hit->integral_sum);
     }
-    
-    // Add spacing between events for readability
-    m_text_output_file << "\n\n";
 }
 
 /**
@@ -117,11 +76,6 @@ void JEventProcessor_MOLLER::ProcessSequential(const JEvent &event) {
  */
 void JEventProcessor_MOLLER::Finish() {
     LOG << "JEventProcessor_MOLLER::Finish" << LOG_END;
-    
-    // Close the text output file
-    if (m_text_output_file.is_open()) {
-        m_text_output_file.close();
-    }
 
     // Write ROOT objects and close ROOT file
     if (m_root_output_file) {
