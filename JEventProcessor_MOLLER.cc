@@ -32,9 +32,9 @@ void JEventProcessor_MOLLER::Init() {
 
     // Create ROOT tree for waveform data
     m_waveform_tree = new TTree("waveform_tree", "FADC250 Waveform Data (slot, channel, waveform)");
-    m_waveform_tree->Branch("slot", &m_waveform_tree_row.slot, "slot/i");
-    m_waveform_tree->Branch("chan", &m_waveform_tree_row.chan, "chan/i");
-    m_waveform_tree->Branch("waveform", &m_waveform_tree_row.waveform);
+    m_waveform_tree->Branch("slot", &ev_slot);
+    m_waveform_tree->Branch("chan", &ev_chan);
+    m_waveform_tree->Branch("waveform", &ev_waveform);
 
     // Create histogram for pulse integral distribution
     m_pulse_integral_hist = new TH1I("h_integral", "Pulse Integral Distribution;Integral Sum;Counts", 100, 0, 1);
@@ -51,15 +51,23 @@ void JEventProcessor_MOLLER::Init() {
  * @param event Reference to the JANA2 event to process
  */
 void JEventProcessor_MOLLER::ProcessSequential(const JEvent &event) {
-    
+   
+    ev_slot.clear();
+    ev_chan.clear();
+    ev_waveform.clear();
+
     // FADC250 waveform hits
     for (const auto& waveform_hit : m_waveform_hits_in()) {
         // Fill ROOT tree with waveform data
         m_waveform_tree_row.slot = waveform_hit->slot;
         m_waveform_tree_row.chan = waveform_hit->chan;
         m_waveform_tree_row.waveform = waveform_hit->waveform;
-        m_waveform_tree->Fill();
+
+	ev_slot.push_back(m_waveform_tree_row.slot);
+	ev_chan.push_back(m_waveform_tree_row.chan);
+	ev_waveform.push_back(m_waveform_tree_row.waveform);
     }
+    m_waveform_tree->Fill();
 
     // FADC250 pulse hits
     for (const auto& pulse_hit : m_pulse_hits_in()) {

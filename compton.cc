@@ -1,9 +1,9 @@
 /**
- * @file moller.cc
+ * @file compton.cc
  * @brief Main application entry point
  * 
  * This file sets up the JANA2 application framework and registers all necessary
- * components for processing MOLLER experiment data from EVIO files.
+ * components for processing compton polarimeter data from EVIO files.
  */
 
 #include <JANA/JApplication.h>           // Core JANA2 application framework

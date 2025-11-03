@@ -49,12 +49,18 @@ private:
      * The parameter constructor takes the following arguments:
      * - owner: Pointer to this component (for parameter registration)
      * - name: "ROOT_OUT_FILENAME" - the parameter name used in configuration files/command line
-     * - default_value: "moller.root" - default filename if not specified
+     * - default_value: "compton.root" - default filename if not specified
      * - description: "Output file name for root data" - help text for the parameter
      * - is_shared: if true, the parameter name is used as-is;  
      *              if false (default), the component's prefix (set in the constructor) is prepended to the name.
      */
-    Parameter<std::string> m_root_output_filename {this, "ROOT_OUT_FILENAME", "moller.root", "Output file name for ROOT data", true};
+    Parameter<std::string> m_root_output_filename {this, "ROOT_OUT_FILENAME", "compton.root", "Output file name for ROOT data", true};
+
+    // ROOT Tree variables 
+    std::vector<uint32_t> ev_slot;
+    std::vector<uint32_t> ev_chan;
+    std::vector< std::vector<uint32_t> > ev_waveform;
+
 
     // ROOT output objects
     TFile *m_root_output_file;                ///< ROOT file for histogram and tree storage

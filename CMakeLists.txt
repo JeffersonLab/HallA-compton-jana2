@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(moller LANGUAGES CXX)
+project(compton LANGUAGES CXX)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 20)
@@ -19,7 +19,7 @@ find_package(ROOT REQUIRED COMPONENTS Core RIO Tree Hist)
 
 # Specify source files
 set(SOURCES
-    moller.cc                    # Main application entry point
+    compton.cc                    # Main application entry point
     JEventSource_EVIO.cc         # Custom EVIO event source
     JEventProcessor_MOLLER.cc    # Main event processor
     JFactory_FADC250.cc          # Factory for FADC250 detector data
@@ -28,10 +28,10 @@ set(SOURCES
 )
 
 # Create the main executable
-add_executable(moller ${SOURCES})
+add_executable(compton ${SOURCES})
 
 # Include directories
-target_include_directories(moller
+target_include_directories(compton
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}           # Main source directory
         ${CMAKE_CURRENT_SOURCE_DIR}/data_objects  # Data object definitions
@@ -39,7 +39,7 @@ target_include_directories(moller
 )
 
 # Link required libraries to the executable
-target_link_libraries(moller
+target_link_libraries(compton
     PRIVATE
         ${JANA_LIBRARY}      # JANA2 framework library
         evio::eviocc         # EVIO C++ library for data I/O
