@@ -139,7 +139,7 @@ You can specify a custom ROOT output filename:
 ### Core Application Files
 - `compton.cc` – Main application entry point
 - `JEventSource_EVIO.cc/.h` – Custom EVIO event source
-- `JEventProcessor_MOLLER.cc/.h` – Main event processor
+- `JEventProcessor_Compton.cc/.h` – Main event processor
 - `JFactory_FADC250.cc/.h` – Factory for FADC250 detector data
 
 ### Data Objects (`data_objects/`)

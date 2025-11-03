@@ -112,7 +112,7 @@ void JEventSource_EVIO::ProcessParallel(JEvent& event) const {
  * @return Description string
  */
 std::string JEventSource_EVIO::GetDescription() {
-    return "EVIO event source for MOLLER experiment data";
+    return "EVIO event source for Compton experiment data";
 }
 
 /**

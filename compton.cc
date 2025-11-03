@@ -14,7 +14,7 @@
 
 // Experiment specific components
 #include "JEventSource_EVIO.h"          // EVIO file event source
-#include "JEventProcessor_MOLLER.h"     // Main event processor
+#include "JEventProcessor_Compton.h"     // Main event processor
 #include "JFactory_FADC250.h"           // FADC250 data factory
 
 /**
@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
 
     // Register all application components
     app.Add(new JEventSourceGeneratorT<JEventSource_EVIO>());  // EVIO file reader
-    app.Add(new JEventProcessor_MOLLER());                     // Data processor
+    app.Add(new JEventProcessor_Compton());                     // Data processor
     app.Add(new JFactoryGeneratorT<JFactory_FADC250>());       // FADC250 data factory
 
     // Initialize and run the application

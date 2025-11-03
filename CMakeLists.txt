@@ -16,12 +16,26 @@ find_package(evio REQUIRED)
 # Find ROOT
 # ROOT provides TFile, TTree, and histogram functionality
 find_package(ROOT REQUIRED COMPONENTS Core RIO Tree Hist)
+include(${ROOT_USE_FILE})
+
+#---------------------------------------------------------------
+# Generate ROOT dictionary for std::vector<std::vector<unsigned int>>
+#---------------------------------------------------------------
+
+# This will create G__ComptonDict.cxx and G__ComptonDict_rdict.pcm
+ROOT_GENERATE_DICTIONARY(G__ComptonDict
+    LINKDEF Compton_LinkDef.h
+)
+
+# Add the generated dictionary to a small helper library
+add_library(ComptonDict SHARED G__ComptonDict.cxx)
+target_link_libraries(ComptonDict PUBLIC ROOT::Core ROOT::RIO ROOT::Tree ROOT::Hist)
 
 # Specify source files
 set(SOURCES
     compton.cc                    # Main application entry point
     JEventSource_EVIO.cc         # Custom EVIO event source
-    JEventProcessor_MOLLER.cc    # Main event processor
+    JEventProcessor_Compton.cc    # Main event processor
     JFactory_FADC250.cc          # Factory for FADC250 detector data
     parsers/EvioEventParser.cc   # EVIO event parsing utilities
     parsers/RawDataParser.cc     # Raw data parsing utilities
@@ -47,5 +61,6 @@ target_link_libraries(compton
         ROOT::RIO            # ROOT file I/O (TFile)
         ROOT::Tree           # ROOT TTree functionality
         ROOT::Hist           # ROOT histogram functionality (TH1)
+	ComptonDict          # ROOT dictionary 
 )
 
