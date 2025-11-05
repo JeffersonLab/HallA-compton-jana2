@@ -36,6 +36,11 @@ void JEventProcessor_Compton::Init() {
     m_waveform_tree->Branch("chan", &ev_chan);
     m_waveform_tree->Branch("waveform", &ev_waveform);
 
+    // Create ROOT tree for physics event
+    //m_tree = new TTree("T", "Event tree");
+    //m_tree
+
+
     // Create histogram for pulse integral distribution
     m_pulse_integral_hist = new TH1I("h_integral", "Pulse Integral Distribution;Integral Sum;Counts", 100, 0, 1);
     m_pulse_integral_hist->SetCanExtend(TH1::kAllAxes);  // Allow ROOT to automatically extend bins
@@ -67,7 +72,7 @@ void JEventProcessor_Compton::ProcessSequential(const JEvent &event) {
 
 	ev_slot.insert(ev_slot.end(), waveform_sample_number, m_waveform_tree_row.slot);
 	ev_chan.insert(ev_chan.end(), waveform_sample_number, m_waveform_tree_row.chan);
-	ev_waveform.push_back(m_waveform_tree_row.waveform);
+	ev_waveform.insert(ev_waveform.end(),  m_waveform_tree_row.waveform.begin(), m_waveform_tree_row.waveform.end());
     }
     m_waveform_tree->Fill();
 

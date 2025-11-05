@@ -59,13 +59,14 @@ private:
     // ROOT Tree variables 
     std::vector<uint32_t> ev_slot;
     std::vector<uint32_t> ev_chan;
-    std::vector< std::vector<uint32_t> > ev_waveform;
+    std::vector<uint32_t> ev_waveform;
 
 
     // ROOT output objects
     TFile *m_root_output_file;                ///< ROOT file for histogram and tree storage
     WaveformTreeRow m_waveform_tree_row;      ///< Data structure holding the current row for TTree filling
     TTree *m_waveform_tree;                   ///< ROOT tree for waveform data
+    TTree *m_tree;                            ///< ROOT tree for physics event
     TH1I *m_pulse_integral_hist;              ///< Histogram of pulse integral sums
 
 public:
