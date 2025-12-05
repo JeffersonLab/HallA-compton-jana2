@@ -1,6 +1,6 @@
 
-#ifndef _JEventProcessor_MOLLER_h_
-#define _JEventProcessor_MOLLER_h_
+#ifndef _JEventProcessor_Compton_h_
+#define _JEventProcessor_Compton_h_
 
 #include <TFile.h>
 #include <TTree.h>
@@ -25,7 +25,7 @@ struct WaveformTreeRow {
 };
 
 /**
- * @class JEventProcessor_MOLLER
+ * @class JEventProcessor_Compton
  * @brief Main event processor for FADC250 detector data analysis
  * 
  * This processor receives FADC250 detector hits (both waveform and pulse hits)
@@ -35,7 +35,7 @@ struct WaveformTreeRow {
  * 
  * The output filename can be customized via JANA2 parameters.
  */
-class JEventProcessor_MOLLER : public JEventProcessor {
+class JEventProcessor_Compton : public JEventProcessor {
 
 private:
     // Declare Inputs
@@ -49,23 +49,30 @@ private:
      * The parameter constructor takes the following arguments:
      * - owner: Pointer to this component (for parameter registration)
      * - name: "ROOT_OUT_FILENAME" - the parameter name used in configuration files/command line
-     * - default_value: "moller.root" - default filename if not specified
+     * - default_value: "compton.root" - default filename if not specified
      * - description: "Output file name for root data" - help text for the parameter
      * - is_shared: if true, the parameter name is used as-is;  
      *              if false (default), the component's prefix (set in the constructor) is prepended to the name.
      */
-    Parameter<std::string> m_root_output_filename {this, "ROOT_OUT_FILENAME", "moller.root", "Output file name for ROOT data", true};
+    Parameter<std::string> m_root_output_filename {this, "ROOT_OUT_FILENAME", "compton.root", "Output file name for ROOT data", true};
+
+    // ROOT Tree variables 
+    std::vector<uint32_t> ev_slot;
+    std::vector<uint32_t> ev_chan;
+    std::vector<uint32_t> ev_waveform;
+
 
     // ROOT output objects
     TFile *m_root_output_file;                ///< ROOT file for histogram and tree storage
     WaveformTreeRow m_waveform_tree_row;      ///< Data structure holding the current row for TTree filling
     TTree *m_waveform_tree;                   ///< ROOT tree for waveform data
+    TTree *m_tree;                            ///< ROOT tree for physics event
     TH1I *m_pulse_integral_hist;              ///< Histogram of pulse integral sums
 
 public:
 
-    JEventProcessor_MOLLER();
-    virtual ~JEventProcessor_MOLLER() = default;
+    JEventProcessor_Compton();
+    virtual ~JEventProcessor_Compton() = default;
 
     void Init() override;
     void ProcessSequential(const JEvent& event) override;
@@ -73,5 +80,5 @@ public:
 
 };
 
-#endif // _JEventProcessor_MOLLER_h_
+#endif // _JEventProcessor_Compton_h_
 

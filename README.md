@@ -106,7 +106,7 @@ cmake --build build --target install --parallel
 cd ..
 
 # 3. Build application (adjust ROOT path as needed)
-cd moller_exp
+cd compton_exp
 cmake -S . -B build -DCMAKE_PREFIX_PATH="/path/to/JANA2;/path/to/EVIO/Linux-x86_64;/path/to/ROOT"
 cmake --build build --parallel
 ```
@@ -118,10 +118,10 @@ cmake --build build --parallel
 After building, run the application with:
 
 ```bash
-./build/moller [jana_options] <evio_file1> [evio_file2] ...
+./build/compton [jana_options] <evio_file1> [evio_file2] ...
 ```
 
-The application will process the specified EVIO files and create a ROOT output file (`moller.root`) containing:
+The application will process the specified EVIO files and create a ROOT output file (`compton.root`) containing:
 - **Waveform TTree** (`waveform_tree`): Channel-by-channel waveform data with branches for slot, channel, and waveform samples
 - **Pulse Integral Histogram** (`h_integral`): Distribution of pulse integral sums
 
@@ -131,15 +131,15 @@ You can specify a custom ROOT output filename:
 
 ```bash
 # Customize ROOT output filename
-./build/moller -PROOT_OUT_FILENAME=my_data.root <evio_file>
+./build/compton -PROOT_OUT_FILENAME=my_data.root <evio_file>
 ```
 
 ## Project Structure
 
 ### Core Application Files
-- `moller.cc` – Main application entry point
+- `compton.cc` – Main application entry point
 - `JEventSource_EVIO.cc/.h` – Custom EVIO event source
-- `JEventProcessor_MOLLER.cc/.h` – Main event processor
+- `JEventProcessor_Compton.cc/.h` – Main event processor
 - `JFactory_FADC250.cc/.h` – Factory for FADC250 detector data
 
 ### Data Objects (`data_objects/`)

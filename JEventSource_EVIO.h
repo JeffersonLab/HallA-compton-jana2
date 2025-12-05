@@ -16,7 +16,7 @@
  * @brief JANA2 event source for reading EVIO format data files
  * 
  * This class handles the reading of EVIO files and creation of events
- * for the MOLLER experiment data processing pipeline.
+ * for the Compton experiment data processing pipeline.
  */
 class JEventSource_EVIO : public JEventSource {
 

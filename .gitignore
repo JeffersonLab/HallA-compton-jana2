@@ -10,7 +10,7 @@ Makefile
 !CMakeLists.txt
 
 # Executable
-moller
+compton
 
 # Output files
 *.root
