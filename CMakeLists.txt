@@ -36,7 +36,7 @@ set(SOURCES
     compton.cc                    # Main application entry point
     JEventSource_EVIO.cc         # Custom EVIO event source
     JEventProcessor_Compton.cc    # Main event processor
-    JFactory_FADC250.cc          # Factory for FADC250 detector data
+    JFactory_PhysicsEvent.cc     # Factory for PhysicsEvent objects
     parsers/EvioEventParser.cc   # EVIO event parsing utilities
     parsers/RawDataParser.cc     # Raw data parsing utilities
 )

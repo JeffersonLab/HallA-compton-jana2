@@ -1,14 +1,29 @@
 # FADC250 Data Processing Application
 
-A JANA2-based application for processing FADC250 detector data from EVIO-format files. For now, the application supports extracting and decoding FADC250 data only if each EVIO event contains exactly one detector event.
+A JANA2-based application for processing FADC250 detector data from EVIO-format files. For now, the application supports extracting and decoding FADC250 data only.
 
 ## Data Processing Flow
 
-1. **Event Source** reads EVIO files, extracts run numbers from control events (skipping them), and adds physics events to the processing queue
-2. **Factory** fetches these events and passes them to the EVIO event parser 
-3. **EVIO Event Parser** does EVIO event level parsing and delegates raw data parsing to Raw Data Parser
-4. **Raw Data Parser** parses raw data and creates hit objects with extracted data
-5. **Processor** consumes these hit objects and outputs the results to a ROOT file
+The application uses a two-level event structure (block-level and physics event-level) to process EVIO data:
+
+1. **JEventSource_EVIO** reads EVIO files and creates block-level events:
+   - Extracts run numbers from run control events (tags 0xFFD0-0xFFDF) and skips them
+   - Wraps physics events in `EvioEventWrapper` objects and inserts them into block-level events
+
+2. **JFactory_PhysicsEvent** processes block-level events:
+   - Extracts `EvioEventWrapper` objects from the event
+   - Uses `EvioEventParser` to parse the raw EVIO event structure
+   - Creates `PhysicsEvent` objects containing detector hits (waveforms and pulses)
+
+3. **JEventUnfolder_EVIO** unfolds block-level events into physics event-level child events:
+   - Takes `PhysicsEvent` objects from the block-level parent event
+   - Creates individual physics event-level child events
+
+4. **JEventProcessor_Compton** processes physics event-level events:
+   - Receives FADC250 waveform and pulse hits
+   - Writes waveform data to a ROOT TTree
+   - Fills histograms with pulse integral distributions
+   - Outputs results to a ROOT file
 
 ## Hardware Configuration
 
@@ -25,7 +40,7 @@ Before building this application, ensure you have:
 - CMake 3.16 or higher
 - C++20 compatible compiler
 - Git (for cloning dependencies)
-- ROOT 6.3x.x (for data analysis and visualization)
+- ROOT 6.36.04 (for data analysis and visualization)
 
 ## Dependencies
 
@@ -60,9 +75,7 @@ cmake --build build --target install --parallel
 
 ### 3. Building ROOT
 
-**For ifarm users**: Use the pre-built version at `/group/halld/Software/builds/Linux_Alma9-x86_64-gcc11.5.0/root/root-6.32.08`
-
-**For other systems**: Install ROOT following the guide at https://root.cern/install/
+Install ROOT following the guide at https://root.cern/install/
 
 ## Building the Application
 
@@ -77,7 +90,7 @@ cmake -S . -B build -DCMAKE_PREFIX_PATH="/path/to/JANA2;/path/to/EVIO/Linux-x86_
 Replace the paths with your actual installation directories:
 - `/path/to/JANA2` - Your JANA2 directory
 - `/path/to/EVIO` - Your EVIO directory  
-- `/path/to/ROOT` - Your ROOT installation (on ifarm set it to `/group/halld/Software/builds/Linux_Alma9-x86_64-gcc11.5.0/root/root-6.32.08`)
+- `/path/to/ROOT` - Your ROOT installation
 
 2. **Build the application:**
 
@@ -111,7 +124,7 @@ cmake -S . -B build -DCMAKE_PREFIX_PATH="/path/to/JANA2;/path/to/EVIO/Linux-x86_
 cmake --build build --parallel
 ```
 
-**Note**: ROOT installation is not shown here. On ifarm, use the pre-built version. On other systems, install ROOT first (see Dependencies section).
+**Note**: ROOT installation is not shown here, install ROOT first (see Dependencies section).
 
 ## Usage
 
@@ -137,14 +150,16 @@ You can specify a custom ROOT output filename:
 ## Project Structure
 
 ### Core Application Files
-- `compton.cc` – Main application entry point
-- `JEventSource_EVIO.cc/.h` – Custom EVIO event source
-- `JEventProcessor_Compton.cc/.h` – Main event processor
-- `JFactory_FADC250.cc/.h` – Factory for FADC250 detector data
+- `compton.cc` – Main application entry point that registers all components
+- `JEventSource_EVIO.cc/.h` – EVIO file event source (block-level events)
+- `JFactory_PhysicsEvent.cc/.h` – Factory that creates PhysicsEvent objects from EVIO events
+- `JEventUnfolder_EVIO.h` – Unfolder that creates physics event-level child events from block-level events
+- `JEventProcessor_Compton.cc/.h` – Main event processor that writes data to ROOT file
 
 ### Data Objects (`data_objects/`)
+- `PhysicsEvent.h` – Container for physics event data including event number and hits
 - `EventHits.h` – Container for all event hits
-- `EvioEventWrapper.h` – Wrapper for EVIO event data
+- `EvioEventWrapper.h` – JANA2 object wrapper for EVIO events (allows shared_ptr to be passed through JANA2 pipeline)
 - `FADC250Hit.h` – Base class for all FADC250 hits
 - `FADC250PulseHit.h` – Pulse hit data structure
 - `FADC250WaveformHit.h` – Waveform hit data structure

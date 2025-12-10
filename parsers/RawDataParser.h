@@ -5,6 +5,7 @@
 #include <memory>
 #include "eviocc.h"
 #include "EventHits.h"
+#include "PhysicsEvent.h"
 
 /**
  * Class for parsing raw data blocks and extracting hits
@@ -12,14 +13,16 @@
 class RawDataParser {
 public:
     /**
-     * Parse a raw data block and extract hits
+     * Parse a raw data block and extract physics events
      * @param data_block The data block to parse
      * @param rocid ROC ID
-     * @param event_hits Reference to event hits container (will be updated)
+     * @param m_physics_events Reference to physics events vector (will be updated)
+     * @param m_block_first_event_num First event number in the block
      */
     static void parseRawData(std::shared_ptr<evio::BaseStructure> data_block, 
                             uint32_t rocid, 
-                            std::shared_ptr<EventHits> event_hits);
+                            std::vector<PhysicsEvent*>& m_physics_events,
+                            uint64_t m_block_first_event_num);
 
 private:
     /**

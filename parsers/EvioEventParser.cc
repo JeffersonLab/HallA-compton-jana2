@@ -10,22 +10,15 @@
  * 3. Parsing data banks to extract detector hits
  */
 void EvioEventParser::parse() {
-    // Check that the block contains exactly one event (>1 events in  an evio_event are NOT_SUPPORTED yet)
-    std::shared_ptr<evio::BaseStructureHeader> header = m_event->getHeader();
-    uint8_t nblock_events = header->getNumber();
-    if(nblock_events > 1) {
-        throw JException("EvioEventParser::parse: block has more than one events - NOT SUPPORTED YET");
-    }
-
-    // Get all child structures (Trigger Bank + Data Banks)
+    // Get all child structures (Trigger Bank + ROC Banks)
     auto& children = m_event->getChildren();
     
     // Parse the trigger bank to extract ROC segments and event number
     auto trigger_bank_roc_segments = parseTriggerBank(children[0]);
     
     // Parse the data banks while using the trigger bank ROC segments for validation
-    std::vector<std::shared_ptr<evio::BaseStructure>> data_banks(children.begin() + 1, children.end());
-    parseDataBanks(data_banks, trigger_bank_roc_segments);
+    std::vector<std::shared_ptr<evio::BaseStructure>> roc_banks(children.begin() + 1, children.end());
+    parseROCBanks(roc_banks, trigger_bank_roc_segments);
     
     // Mark the event as successfully parsed
     m_is_parsed = true;
@@ -50,7 +43,7 @@ std::vector<std::shared_ptr<evio::BaseStructure>> EvioEventParser::parseTriggerB
     // Extract event number from the first segment (EB1)
     auto eb1_segment = trigger_bank_children.at(0);
     std::vector<uint64_t> eb1_data = eb1_segment->getULongData();
-    m_event_num = eb1_data[0];
+    m_block_first_event_num = static_cast<uint64_t>(eb1_data[0]);
     
     // Collect all ROC segments (UINT32 data type)
     std::vector<std::shared_ptr<evio::BaseStructure>> trigger_bank_rocs_data;
@@ -81,13 +74,13 @@ std::vector<std::shared_ptr<evio::BaseStructure>> EvioEventParser::parseTriggerB
  * @param data_banks Vector of data banks to parse
  * @param trigger_bank_roc_segments Vector of trigger bank ROC segments for validation
  */
-void EvioEventParser::parseDataBanks(const std::vector<std::shared_ptr<evio::BaseStructure>>& data_banks,
+void EvioEventParser::parseROCBanks(const std::vector<std::shared_ptr<evio::BaseStructure>>& data_banks,
                                      const std::vector<std::shared_ptr<evio::BaseStructure>>& trigger_bank_roc_segments) {
     
     // Validate that the number of data banks matches the number of ROC segments
     // Expected: #ROCs == #TriggerBankROCsegments == #RemainingBanksAfterTriggerBank 
     if(data_banks.size() != trigger_bank_roc_segments.size()) {
-        throw JException("EvioEventParser::parseDataBanks: #ROC databanks != #ROC segments in trigger bank -- %d != %d", data_banks.size(), trigger_bank_roc_segments.size());
+        throw JException("EvioEventParser::parseROCBanks: #ROC databanks != #ROC segments in trigger bank -- %d != %d", data_banks.size(), trigger_bank_roc_segments.size());
     }
     
     // Process each data bank
@@ -101,45 +94,30 @@ void EvioEventParser::parseDataBanks(const std::vector<std::shared_ptr<evio::Bas
         
         // Validate that ROC IDs match between trigger and data banks
         if(tb_rocid != db_rocid) {
-            throw JException("EvioEventParser::parseDataBanks: Trigger bank roc segment rocid != Data bank rocid -- %d != %d", tb_rocid, db_rocid);
+            throw JException("EvioEventParser::parseROCBanks: Trigger bank roc segment rocid != Data bank rocid -- %d != %d", tb_rocid, db_rocid);
         }
         
-        // Parse all data blocks within this data bank
-        auto data_blocks = db->getChildren();
-        for (auto dbb : data_blocks) {
-            RawDataParser::parseRawData(dbb, db_rocid, m_hits);
+        // Parse one or more DMA blocks within this ROC bank
+        auto dma_blocks = db->getChildren();
+        for (auto dma : dma_blocks) {
+            RawDataParser::parseRawData(dma, db_rocid, m_physics_events, m_block_first_event_num);
         }
     }
 }
 
 /**
- * @brief Get the event number
+ * @brief Get the parsed physics events
  * 
- * Returns the event number extracted from the trigger bank during parsing.
+ * Returns the vector of PhysicsEvent pointers containing all parsed physics events.
  * 
- * @return Event number
+ * @return Vector of PhysicsEvent pointers
  * @throws JException if called before the event is parsed
  */
-uint64_t EvioEventParser::getEventNumber() const {
+std::vector<PhysicsEvent*> EvioEventParser::getPhysicsEvents() const {
     if(!m_is_parsed) {
-        throw JException("EvioEventParser::getEventNumber: Trying to get event_num before the event is parsed");
+        throw JException("EvioEventParser::getPhysicsEvents: Trying to get events before the evio block is parsed");
     }
-    return m_event_num;
-}
-
-/**
- * @brief Get the parsed hits
- * 
- * Returns the EventHits structure containing all parsed detector hits.
- * 
- * @return Shared pointer to EventHits containing all parsed hits
- * @throws JException if called before the event is parsed
- */
-std::shared_ptr<EventHits> EvioEventParser::getHits() const {
-    if(!m_is_parsed) {
-        throw JException("EvioEventParser::getHits: Trying to get hits before the event is parsed");
-    }
-    return m_hits;
+    return m_physics_events;
 }
 
 /**

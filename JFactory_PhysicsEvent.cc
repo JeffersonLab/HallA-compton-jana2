@@ -1,30 +1,28 @@
 
-#include "JFactory_FADC250.h"
+#include "JFactory_PhysicsEvent.h"
 #include "EvioEventParser.h"
 
 #include <JANA/JEvent.h>
 
 /**
- * @brief Constructor for JFactory_FADC250
+ * @brief Constructor for JFactory_PhysicsEvent
  * 
  * Initializes the factory with the appropriate type name and prefix.
- * Sets up the factory for processing EVIO events and creating FADC250 hits.
+ * Sets up the factory for processing EVIO events and creating PhysicsEvent objects.
  */
-JFactory_FADC250::JFactory_FADC250() {
+JFactory_PhysicsEvent::JFactory_PhysicsEvent() {
 
     // Set the type name of this class for more informative error messages
     SetTypeName(NAME_OF_THIS);
 
     // Set the default prefix for this factory (used as prefix for parameters)
     // In ePIC, this is usually overridden by the JOmniFactoryGenerator
-    SetPrefix("fadc250_factory");
+    SetPrefix("physics_event_factory");
 
-    // Short name distinguishes this output when multiple outputs have the same type (e.g. int).
-    // Usage: event.Get<int>("event_number") retrieves this specific output.
-    m_event_number_out.SetShortName("event_number");
+    SetLevel(JEventLevel::Block);
 
     // Optional: Set inputs as optional if they might not always be present
-    // m_hits_in.SetOptional(true);
+    // m_evio_events_in.SetOptional(true);
 
     // Optional: Set factory flags as needed
     // m_hits_out.SetNotOwnerFlag(true);
@@ -41,7 +39,7 @@ JFactory_FADC250::JFactory_FADC250() {
  * - Declared Parameter values have been fetched
  * - Declared Services have been fetched
  */
-void JFactory_FADC250::Init() {
+void JFactory_PhysicsEvent::Init() {
     LOG_DEBUG(GetLogger()) << "Inside Init()";
 
     // Unlike v1, you don't have to fetch any parameters or services in here, as this is done automatically now.
@@ -57,7 +55,7 @@ void JFactory_FADC250::Init() {
  * 
  * @param event Reference to the current JANA2 event
  */
-void JFactory_FADC250::ChangeRun(const JEvent& event) {
+void JFactory_PhysicsEvent::ChangeRun(const JEvent& event) {
     LOG_DEBUG(GetLogger()) << "Inside ChangeRun() with run_number=" << event.GetRunNumber();
 }
 
@@ -70,27 +68,21 @@ void JFactory_FADC250::ChangeRun(const JEvent& event) {
  * 
  * @param event Reference to the JANA2 event to process
  */
-void JFactory_FADC250::Process(const JEvent& event) {
+void JFactory_PhysicsEvent::Process(const JEvent& event) {
     LOG_DEBUG(GetLogger()) << "Inside Process() with run_number=" << event.GetRunNumber()
                           << ", event_number=" << event.GetEventNumber();
 
     // Get the EVIO event
-    std::shared_ptr<evio::EvioEvent> evio_event = m_hits_in().at(0)->evio_event;
+    std::shared_ptr<evio::EvioEvent> evio_event = m_evio_events_in().at(0)->evio_event;
     
-    // Create and use the EVIO event parser to extract hits
+    // Create and use the EVIO event parser to extract physics events from the raw EVIO structure
+    // The parser processes the EVIO event and extracts all physics events contained within it
     auto evio_event_parser = std::make_unique<EvioEventParser>(evio_event);
     evio_event_parser->parse();
     
-    // Get the parsed hits from the parser
-    std::shared_ptr<EventHits> hits = evio_event_parser->getHits();
-
-    // Populate the output data bundles
-    // JANA2 will store and retrieve them automatically once this method returns
-    m_waveform_hits_out() = hits->waveforms;
-    m_pulse_hits_out() = hits->pulses;
-
-    // Lets us pass the event number back to the event source so that it can be set
-    m_event_number_out().push_back(new int(evio_event_parser->getEventNumber()));
+    // Get the parsed physics events from the parser and set them as factory output
+    // These PhysicsEvent objects will be used by the unfolder to create child events
+    m_physics_events_out() = evio_event_parser->getPhysicsEvents();
 }
 
 /**
@@ -98,6 +90,7 @@ void JFactory_FADC250::Process(const JEvent& event) {
  * 
  * Called once at the end of processing to perform cleanup.
  */
-void JFactory_FADC250::Finish() {
+void JFactory_PhysicsEvent::Finish() {
     LOG_DEBUG(GetLogger()) << "Inside Finish()";
 }
+
