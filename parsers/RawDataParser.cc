@@ -16,7 +16,8 @@
  */
 void RawDataParser::parseRawData(std::shared_ptr<evio::BaseStructure> data_block, 
                                 uint32_t rocid, 
-                                std::shared_ptr<EventHits> event_hits) {
+                                std::vector<PhysicsEvent*>& m_physics_events,
+                                uint64_t m_block_first_event_num) {
     // Get all data words from the block
     std::vector<uint32_t> data_words = data_block->getUIntData();
     
@@ -27,6 +28,8 @@ void RawDataParser::parseRawData(std::shared_ptr<evio::BaseStructure> data_block
     uint32_t timestamp1 = 0;
     uint32_t timestamp2 = 0;
     int block_nevents = -1;  // -1 indicates no block header processed yet
+    int event_index = 0;
+    std::shared_ptr<EventHits> event_hits = nullptr;
     
     // Process each data word sequentially
     for (size_t j = 0; j < data_words.size(); j++) {
@@ -41,14 +44,24 @@ void RawDataParser::parseRawData(std::shared_ptr<evio::BaseStructure> data_block
                 block_slot = getBitsInRange(d, 26, 22);
                 module_id = getBitsInRange(d, 21, 18);
                 block_nevents = getBitsInRange(d, 7, 0);
-            } else if (data_type == 1) { // Block trailer
+            } else if (data_type == 1) { // Block trailer              
                 if (block_nevents != 0) {
                     throw JException(
                         "RawDataParser::parseRawData: Invalid data format — block trailer word before reading in all events"
                     );
                 }
                 block_nevents = -1;
+                if (j == data_words.size() - 1 && event_hits != nullptr) { // because in that case event is not followed by any event header later
+                    PhysicsEvent* physics_event = new PhysicsEvent(m_block_first_event_num + event_index, event_hits);
+                    m_physics_events.push_back(physics_event);
+                }
+                event_index = 0;
             } else if (data_type == 2) { // Event header
+                if (event_hits != nullptr) { // insert previous event into physics_events first
+                    PhysicsEvent* physics_event = new PhysicsEvent(m_block_first_event_num + event_index, event_hits);
+                    m_physics_events.push_back(physics_event);
+                    event_index++;
+                }
                 if (block_nevents <= 0) {
                     throw JException(
                         "RawDataParser::parseRawData: Invalid data format — event header before block header"
@@ -62,7 +75,9 @@ void RawDataParser::parseRawData(std::shared_ptr<evio::BaseStructure> data_block
                         eh_slot, block_slot
                     );
                 }
-                trigger_num = getBitsInRange(d, 21, 0);
+                trigger_num = getBitsInRange(d, 21, 0); // should be 11-0 instead
+                // Initialize new event hits container for this event
+                event_hits = std::make_shared<EventHits>();
             } else if (data_type == 3) { // Trigger time
                 if (block_nevents < 0) {
                     throw JException(

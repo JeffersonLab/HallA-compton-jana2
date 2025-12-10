@@ -30,7 +30,6 @@ public:
     
     void Open() override;
     void Close() override;
-    void ProcessParallel(JEvent& event) const override;
     Result Emit(JEvent& event) override;
     static std::string GetDescription();
 

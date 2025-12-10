@@ -15,7 +15,8 @@
 // Experiment specific components
 #include "JEventSource_EVIO.h"          // EVIO file event source
 #include "JEventProcessor_Compton.h"     // Main event processor
-#include "JFactory_FADC250.h"           // FADC250 data factory
+#include "JFactory_PhysicsEvent.h"     // PhysicsEvent factory
+#include "JEventUnfolder_EVIO.h"        // Event unfolder
 
 /**
  * @brief Main function for experiment data processing application
@@ -51,8 +52,9 @@ int main(int argc, char* argv[]) {
 
     // Register all application components
     app.Add(new JEventSourceGeneratorT<JEventSource_EVIO>());  // EVIO file reader
+    app.Add(new JFactoryGeneratorT<JFactory_PhysicsEvent>());  // PhysicsEvent factory
+    app.Add(new JEventUnfolder_EVIO());                         // Event unfolder
     app.Add(new JEventProcessor_Compton());                     // Data processor
-    app.Add(new JFactoryGeneratorT<JFactory_FADC250>());       // FADC250 data factory
 
     // Initialize and run the application
     app.Initialize();

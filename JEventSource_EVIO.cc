@@ -26,6 +26,7 @@
 JEventSource_EVIO::JEventSource_EVIO() : JEventSource() {
     SetTypeName(NAME_OF_THIS);                    // Provide JANA with class name
     SetCallbackStyle(CallbackStyle::ExpertMode);
+    SetLevel(JEventLevel::Block);
     EnableProcessParallel(true);
 }
 
@@ -85,26 +86,12 @@ JEventSource::Result JEventSource_EVIO::Emit(JEvent& event) {
     }
 
     // Create a wrapper for the EVIO event and add it to the JANA2 event
+    // The wrapper is necessary because JANA2 cannot directly store shared_ptr objects,
+    // so we wrap the shared_ptr inside a JObject to maintain proper lifetime management
     EvioEventWrapper* wrapper = new EvioEventWrapper(evio_event); 
     event.SetRunNumber(m_run_number);
-    event.Insert(wrapper);  // can't pass in shared ptr directly so to avoid deletion of evio_event passing it inside wrapper
+    event.Insert(wrapper);  // Insert wrapper into event - JANA2 will manage its lifetime
     return Result::Success;
-}
-
-/**
- * @brief Called after Emit(), processes events in parallel
- * 
- * Triggers JFactory_FADC250 via event.Get<int>("event_number") to parse and
- * extract the event number from EVIO data, then assigns it via SetEventNumber().
- * 
- * Flow: ::Emit inserts EvioEventWrapper → ::ProcessParallel triggers factory
- * in parallel → factory parses event_number → SetEventNumber() assigns it
- * 
- * @param event JANA2 event to populate with event number
- */
-void JEventSource_EVIO::ProcessParallel(JEvent& event) const {
-    auto evt_nr = event.Get<int>("event_number");
-    event.SetEventNumber(*evt_nr.at(0));
 }
 
 /**
