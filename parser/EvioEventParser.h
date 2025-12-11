@@ -5,8 +5,11 @@
 #include <vector>
 #include <memory>
 
+#include <JANA/JApplication.h>
+#include <JANA/JEvent.h>
+
 #include "eviocc.h"
-#include "RawDataParser.h"
+#include "BankParser.h"
 #include "EventHits.h"
 #include "PhysicsEvent.h"
 
@@ -16,7 +19,8 @@
 class EvioEventParser {
 private:
     
-    std::shared_ptr<evio::EvioEvent> m_event;
+    const JEvent& m_event;
+    JApplication* m_app;
     std::vector<PhysicsEvent*> m_physics_events;
     uint64_t m_block_first_event_num;
     bool m_is_parsed;
@@ -42,8 +46,8 @@ public:
      * Constructor
      * @param event The EVIO event to parse
      */
-    EvioEventParser(std::shared_ptr<evio::EvioEvent> event) 
-        : m_event(event), m_block_first_event_num(0), m_is_parsed(false) {};
+    EvioEventParser(JApplication* app, const JEvent& event) 
+        : m_app(app), m_event(event), m_block_first_event_num(0), m_is_parsed(false) {};
     
     /**
      * Destructor

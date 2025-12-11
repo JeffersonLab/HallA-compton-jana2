@@ -33,12 +33,12 @@ target_link_libraries(ComptonDict PUBLIC ROOT::Core ROOT::RIO ROOT::Tree ROOT::H
 
 # Specify source files
 set(SOURCES
-    compton.cc                    # Main application entry point
-    JEventSource_EVIO.cc         # Custom EVIO event source
-    JEventProcessor_Compton.cc    # Main event processor
-    JFactory_PhysicsEvent.cc     # Factory for PhysicsEvent objects
-    parsers/EvioEventParser.cc   # EVIO event parsing utilities
-    parsers/RawDataParser.cc     # Raw data parsing utilities
+    compton.cc                          # Main application entry point
+    JEventSource_EVIO.cc                # Custom EVIO event source
+    JEventProcessor_Compton.cc          # Main event processor
+    JFactory_PhysicsEvent.cc            # Factory for PhysicsEvent objects
+    parser/EvioEventParser.cc           # EVIO event parsing utilities
+    user_parsers/FADC/BankParser_FADC.cc  # Bank parsing utilities (FADC250)
 )
 
 # Create the main executable
@@ -48,8 +48,12 @@ add_executable(compton ${SOURCES})
 target_include_directories(compton
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}           # Main source directory
-        ${CMAKE_CURRENT_SOURCE_DIR}/data_objects  # Data object definitions
-        ${CMAKE_CURRENT_SOURCE_DIR}/parsers       # Parser utilities
+        ${CMAKE_CURRENT_SOURCE_DIR}/data_objects              # core data object definitions
+        ${CMAKE_CURRENT_SOURCE_DIR}/parser                    # Parser utilities
+        ${CMAKE_CURRENT_SOURCE_DIR}/parser/data_objects       # EventHits and related data objects
+        ${CMAKE_CURRENT_SOURCE_DIR}/user_parsers              # User parser implementations
+        ${CMAKE_CURRENT_SOURCE_DIR}/user_parsers/FADC              # User parser implementations
+        ${CMAKE_CURRENT_SOURCE_DIR}/user_parsers/FADC/data_objects  # FADC-specific data objects
 )
 
 # Link required libraries to the executable

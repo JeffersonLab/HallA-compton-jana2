@@ -7,7 +7,7 @@
 #include <TH1.h>
 
 #include <JANA/JEventProcessor.h>
-#include "EventHits.h"
+#include "EventHits_FADC.h"
 
 /**
  * @struct WaveformTreeRow

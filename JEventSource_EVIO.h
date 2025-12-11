@@ -31,6 +31,7 @@ public:
     void Open() override;
     void Close() override;
     Result Emit(JEvent& event) override;
+    /// Static description is required by JEventSourceGeneratorT<T>
     static std::string GetDescription();
 
 };
