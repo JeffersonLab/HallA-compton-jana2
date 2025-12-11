@@ -17,8 +17,6 @@
 class JEventUnfolder_EVIO : public JEventUnfolder {
 private:
     Input<PhysicsEvent> events_in {this};  
-    Output<FADC250WaveformHit> m_waveform_hits_out{this};
-    Output<FADC250PulseHit> m_pulse_hits_out{this};
 
 public:
     /**
@@ -63,13 +61,12 @@ public:
         auto physics_event = physics_events[iter];  
           
         // Set event metadata for the child event
-        child.SetEventNumber(physics_event->event_num);   
+        child.SetEventNumber(physics_event->GetEventNumber());   
         child.SetRunNumber(parent.GetRunNumber());       
         
         // Extract hits from the physics event and set them as outputs
         // These hits will be available to processors at the physics event level
-        m_waveform_hits_out() = physics_event->hits->waveforms;
-        m_pulse_hits_out() = physics_event->hits->pulses;  
+        physics_event->insertHitsIntoEvent(child);
   
         // Return appropriate result based on whether this is the last physics event
         // If last event, move to next parent; otherwise, keep parent and process next child

@@ -13,10 +13,12 @@
 #include <JANA/JFactoryGenerator.h>     // Factory generator template
 
 // Experiment specific components
-#include "JEventSource_EVIO.h"          // EVIO file event source
-#include "JEventProcessor_Compton.h"     // Main event processor
-#include "JFactory_PhysicsEvent.h"     // PhysicsEvent factory
-#include "JEventUnfolder_EVIO.h"        // Event unfolder
+#include "JEventSource_EVIO.h"              // EVIO file event source
+#include "JEventProcessor_Compton.h"        // Main event processor
+#include "JFactory_PhysicsEvent.h"         // PhysicsEvent factory
+#include "JEventUnfolder_EVIO.h"           // Event unfolder
+#include "JEventService_BankParsersMap.h"  // Service for mapping bank IDs to bank parsers
+#include "BankParser_FADC.h"              // FADC250 bank parser implementation
 
 /**
  * @brief Main function for experiment data processing application
@@ -53,12 +55,23 @@ int main(int argc, char* argv[]) {
     // Register all application components
     app.Add(new JEventSourceGeneratorT<JEventSource_EVIO>());  // EVIO file reader
     app.Add(new JFactoryGeneratorT<JFactory_PhysicsEvent>());  // PhysicsEvent factory
-    app.Add(new JEventUnfolder_EVIO());                         // Event unfolder
-    app.Add(new JEventProcessor_Compton());                     // Data processor
+    app.Add(new JEventUnfolder_EVIO());                        // Event unfolder
+    app.Add(new JEventProcessor_Compton());                    // Data processor
 
-    // Initialize and run the application
-    app.Initialize();
+    // Register bank parser service
+    app.ProvideService(std::make_shared<JEventService_BankParsersMap>());
+
+    // Initialize the application
+    app.Initialize(); // This will initialize the application and make services available
+
+    // Get bank parser service and register parser implementations
+    auto raw_parsers_service = app.GetService<JEventService_BankParsersMap>();
+    raw_parsers_service->addParser(250, new BankParser_FADC());
+
+    // Run the application
     app.Run();
+
+
 
     // Retrieve and return the exit code
     return app.GetExitCode();

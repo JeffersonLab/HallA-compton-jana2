@@ -1,4 +1,5 @@
-#include "RawDataParser.h"
+#include "BankParser_FADC.h"
+#include "EventHits_FADC.h"
 #include <JANA/JException.h>
 
 /**
@@ -12,12 +13,12 @@
  * 
  * @param data_block The data block to parse
  * @param rocid ROC ID for this data block
- * @param event_hits Reference to event hits container (will be updated)
+ * @param physics_events Reference to physics events vector (will be updated)
  */
-void RawDataParser::parseRawData(std::shared_ptr<evio::BaseStructure> data_block, 
-                                uint32_t rocid, 
-                                std::vector<PhysicsEvent*>& m_physics_events,
-                                uint64_t m_block_first_event_num) {
+void BankParser_FADC::parse(std::shared_ptr<evio::BaseStructure> data_block,
+                               uint32_t rocid,
+                               std::vector<PhysicsEvent*>& physics_events,
+                               uint64_t block_first_event_num) {
     // Get all data words from the block
     std::vector<uint32_t> data_words = data_block->getUIntData();
     
@@ -29,7 +30,9 @@ void RawDataParser::parseRawData(std::shared_ptr<evio::BaseStructure> data_block
     uint32_t timestamp2 = 0;
     int block_nevents = -1;  // -1 indicates no block header processed yet
     int event_index = 0;
-    std::shared_ptr<EventHits> event_hits = nullptr;
+    // Use FADC-specific hits container here, but store it later via the base
+    // EventHits* inside PhysicsEvent to keep that interface generic.
+    std::shared_ptr<EventHits_FADC> event_hits = nullptr;
     
     // Process each data word sequentially
     for (size_t j = 0; j < data_words.size(); j++) {
@@ -47,41 +50,41 @@ void RawDataParser::parseRawData(std::shared_ptr<evio::BaseStructure> data_block
             } else if (data_type == 1) { // Block trailer              
                 if (block_nevents != 0) {
                     throw JException(
-                        "RawDataParser::parseRawData: Invalid data format — block trailer word before reading in all events"
+                        "BankParser::parseRawData: Invalid data format — block trailer word before reading in all events"
                     );
                 }
                 block_nevents = -1;
                 if (j == data_words.size() - 1 && event_hits != nullptr) { // because in that case event is not followed by any event header later
-                    PhysicsEvent* physics_event = new PhysicsEvent(m_block_first_event_num + event_index, event_hits);
-                    m_physics_events.push_back(physics_event);
+                    PhysicsEvent* physics_event = new PhysicsEvent(block_first_event_num + event_index, event_hits);
+                    physics_events.push_back(physics_event);
                 }
                 event_index = 0;
             } else if (data_type == 2) { // Event header
                 if (event_hits != nullptr) { // insert previous event into physics_events first
-                    PhysicsEvent* physics_event = new PhysicsEvent(m_block_first_event_num + event_index, event_hits);
-                    m_physics_events.push_back(physics_event);
+                    PhysicsEvent* physics_event = new PhysicsEvent(block_first_event_num + event_index, event_hits);
+                    physics_events.push_back(physics_event);
                     event_index++;
                 }
                 if (block_nevents <= 0) {
                     throw JException(
-                        "RawDataParser::parseRawData: Invalid data format — event header before block header"
+                        "BankParser::parseRawData: Invalid data format — event header before block header"
                     );
                 }
                 block_nevents--;
                 auto eh_slot = getBitsInRange(d, 26, 22);
                 if (eh_slot != block_slot) {
                     throw JException(
-                        "RawDataParser::parseRawData: Invalid data — event slot(%d) !=  block slot(%d)", 
+                        "BankParser::parseRawData: Invalid data — event slot(%d) !=  block slot(%d)", 
                         eh_slot, block_slot
                     );
                 }
                 trigger_num = getBitsInRange(d, 21, 0); // should be 11-0 instead
-                // Initialize new event hits container for this event
-                event_hits = std::make_shared<EventHits>();
+                // Initialize new FADC-specific hits container for this event
+                event_hits = std::make_shared<EventHits_FADC>();
             } else if (data_type == 3) { // Trigger time
                 if (block_nevents < 0) {
                     throw JException(
-                        "RawDataParser::parseRawData: Invalid data format — trigger time word before block & event header"
+                        "BankParser::parseRawData: Invalid data format — trigger time word before block & event header"
                     );
                 }
                 timestamp1 = getBitsInRange(d, 23, 0);
@@ -90,7 +93,7 @@ void RawDataParser::parseRawData(std::shared_ptr<evio::BaseStructure> data_block
             } else if (data_type == 4) { // Waveform data
                 if (block_nevents < 0) {
                     throw JException(
-                        "RawDataParser::parseRawData: Invalid data format — waveform data word before block & event header"
+                        "BankParser::parseRawData: Invalid data format — waveform data word before block & event header"
                     );
                 }
                 uint32_t chan = getBitsInRange(d, 26, 23);
@@ -105,7 +108,7 @@ void RawDataParser::parseRawData(std::shared_ptr<evio::BaseStructure> data_block
             } else if (data_type == 9) { // Pulse data
                 if (block_nevents < 0) {
                     throw JException(
-                        "RawDataParser::parseRawData: Invalid data format — pulse data word before block & event header"
+                        "BankParser::parseRawData: Invalid data format — pulse data word before block & event header"
                     );
                 }
                 uint32_t chan = getBitsInRange(d, 18, 15);
@@ -125,39 +128,11 @@ void RawDataParser::parseRawData(std::shared_ptr<evio::BaseStructure> data_block
     }
 }
 
-/**
- * @brief Extract bits from a 32-bit word
- * 
- * Utility function to extract a range of bits from a 32-bit word.
- * 
- * @param x The input word
- * @param high High bit position (inclusive)
- * @param low Low bit position (inclusive)
- * @return Extracted bits
- */
-uint32_t RawDataParser::getBitsInRange(uint32_t x, int high, int low) {
-    return (x >> low) & ((1u << (high - low + 1)) - 1);
-}
 
 /**
  * @brief Parse waveform data from data words
- * 
- * This method parses waveform data from the data words, extracting ADC samples
- * and creating a FADC250WaveformHit object.
- * 
- * @param data_words Vector of data words
- * @param index Current index in data_words (will be updated)
- * @param trigger_num Trigger number
- * @param timestamp1 First timestamp
- * @param timestamp2 Second timestamp
- * @param rocid ROC ID
- * @param slot Slot number
- * @param module_id Module ID
- * @param chan Channel number
- * @param waveform_len Expected waveform length
- * @return Parsed waveform hit
  */
-FADC250WaveformHit RawDataParser::parseWaveformData(
+FADC250WaveformHit BankParser_FADC::parseWaveformData(
     const std::vector<uint32_t>& data_words,
     size_t& index,
     uint32_t trigger_num,
@@ -183,7 +158,7 @@ FADC250WaveformHit RawDataParser::parseWaveformData(
         auto ww_word_type = getBitsInRange(ww, 31, 31);
         if (ww_word_type != 0) {
             throw JException(
-                "RawDataParser::parseWaveformData: Invalid data format — lesser words than required for getting all waveform samples"
+                "BankParser::parseWaveformData: Invalid data format — lesser words than required for getting all waveform samples"
             );
         }
         
@@ -203,7 +178,7 @@ FADC250WaveformHit RawDataParser::parseWaveformData(
     // Validate waveform length
     if (waveform_len != hit.getWaveformSize()) {
         throw JException(
-            "RawDataParser::parseWaveformData: Invalid data — Header given waveform size (%d) != Obtained waveform size (%d)",
+            "BankParser::parseWaveformData: Invalid data — Header given waveform size (%d) != Obtained waveform size (%d)",
             waveform_len, hit.getWaveformSize()
         );
     }
@@ -216,24 +191,8 @@ FADC250WaveformHit RawDataParser::parseWaveformData(
 
 /**
  * @brief Parse pulse data from data words
- * 
- * This method parses pulse data from the data words, extracting pulse analysis
- * information and creating FADC250PulseHit objects.
- * 
- * @param data_words Vector of data words
- * @param index Current index in data_words (will be updated)
- * @param trigger_num Trigger number
- * @param timestamp1 First timestamp
- * @param timestamp2 Second timestamp
- * @param rocid ROC ID
- * @param slot Slot number
- * @param module_id Module ID
- * @param chan Channel number
- * @param pedestal_quality Pedestal quality
- * @param pedestal_sum Pedestal sum
- * @return Vector of parsed pulse hits
  */
-std::vector<FADC250PulseHit> RawDataParser::parsePulseData(
+std::vector<FADC250PulseHit> BankParser_FADC::parsePulseData(
     const std::vector<uint32_t>& data_words,
     size_t& index,
     uint32_t trigger_num,

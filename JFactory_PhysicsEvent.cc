@@ -72,12 +72,9 @@ void JFactory_PhysicsEvent::Process(const JEvent& event) {
     LOG_DEBUG(GetLogger()) << "Inside Process() with run_number=" << event.GetRunNumber()
                           << ", event_number=" << event.GetEventNumber();
 
-    // Get the EVIO event
-    std::shared_ptr<evio::EvioEvent> evio_event = m_evio_events_in().at(0)->evio_event;
-    
-    // Create and use the EVIO event parser to extract physics events from the raw EVIO structure
-    // The parser processes the EVIO event and extracts all physics events contained within it
-    auto evio_event_parser = std::make_unique<EvioEventParser>(evio_event);
+    // Create and use the EVIO event parser to extract physics events from the raw EVIO structure.
+    // The parser processes the EVIO event and extracts all physics events contained within it.
+    auto evio_event_parser = std::make_unique<EvioEventParser>(GetApplication(), event);
     evio_event_parser->parse();
     
     // Get the parsed physics events from the parser and set them as factory output

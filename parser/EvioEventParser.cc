@@ -1,5 +1,8 @@
 #include "EvioEventParser.h"
 #include <JANA/JException.h>
+#include "JEventService_BankParsersMap.h"
+#include "EvioEventWrapper.h"
+#include "BankParser_FADC.h"
 
 /**
  * @brief Parse the EVIO event and extract all detector hits
@@ -7,11 +10,12 @@
  * This method orchestrates the parsing of an EVIO event by:
  * 1. Validating the event structure
  * 2. Parsing the trigger bank to extract ROC segments and event number
- * 3. Parsing data banks to extract detector hits
+ * 3. Parsing data banks to extract detector hits using BankParser
  */
 void EvioEventParser::parse() {
     // Get all child structures (Trigger Bank + ROC Banks)
-    auto& children = m_event->getChildren();
+    auto evio_data_block = m_event.Get<EvioEventWrapper>().at(0)->evio_event;
+    auto& children = evio_data_block->getChildren();
     
     // Parse the trigger bank to extract ROC segments and event number
     auto trigger_bank_roc_segments = parseTriggerBank(children[0]);
@@ -69,7 +73,7 @@ std::vector<std::shared_ptr<evio::BaseStructure>> EvioEventParser::parseTriggerB
  * This method processes the data banks by:
  * 1. Validating that the number of data banks matches trigger bank ROC segments
  * 2. Matching ROC IDs between trigger and data banks
- * 3. Parsing each data block using RawDataParser
+ * 3. Parsing each data block using BankParser
  * 
  * @param data_banks Vector of data banks to parse
  * @param trigger_bank_roc_segments Vector of trigger bank ROC segments for validation
@@ -97,10 +101,15 @@ void EvioEventParser::parseROCBanks(const std::vector<std::shared_ptr<evio::Base
             throw JException("EvioEventParser::parseROCBanks: Trigger bank roc segment rocid != Data bank rocid -- %d != %d", tb_rocid, db_rocid);
         }
         
-        // Parse one or more DMA blocks within this ROC bank
+        // Parse one or more dma banks within this ROC bank using the registered BankParsers
         auto dma_blocks = db->getChildren();
         for (auto dma : dma_blocks) {
-            RawDataParser::parseRawData(dma, db_rocid, m_physics_events, m_block_first_event_num);
+            auto bank_id = dma->getHeader()->getTag();
+            auto bank_parser = m_app->GetService<JEventService_BankParsersMap>()->getParser(bank_id);
+            if (bank_parser == nullptr) {
+                throw JException("EvioEventParser::parseROCBanks: No parser found for bank tag %d", bank_id);
+            }
+            bank_parser->parse(dma, db_rocid, m_physics_events, m_block_first_event_num);
         }
     }
 }

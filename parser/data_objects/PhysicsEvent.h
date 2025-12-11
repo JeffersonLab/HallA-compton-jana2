@@ -10,16 +10,26 @@
  * Contains event number and associated detector hits for a single physics event.
  */
 struct PhysicsEvent {
+private:
     int event_num;
     std::shared_ptr<EventHits> hits;
     
+public:
     /**
      * @brief Constructor
      * @param event_num Event number
      * @param hits Shared pointer to EventHits containing detector data
      */
     PhysicsEvent(int event_num, std::shared_ptr<EventHits> hits)
-        : event_num(event_num), hits(hits) {}
+        : event_num(event_num), hits(std::move(hits)) {}
+        
+    void insertHitsIntoEvent(JEvent& event) const {
+        hits->insertIntoEvent(event);
+    }
+
+    int GetEventNumber() const {
+        return event_num;
+    }
 };
 
 #endif // _PHYSICS_EVENT_H_

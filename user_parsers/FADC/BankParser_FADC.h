@@ -1,39 +1,23 @@
-#ifndef RAWDATAPARSER_H
-#define RAWDATAPARSER_H
+#ifndef BANKPARSER_FADC_H
+#define BANKPARSER_FADC_H
 
-#include <vector>
-#include <memory>
-#include "eviocc.h"
-#include "EventHits.h"
-#include "PhysicsEvent.h"
+#include "BankParser.h"
+#include "FADC250WaveformHit.h"
+#include "FADC250PulseHit.h"
 
 /**
- * Class for parsing raw data blocks and extracting hits
+ * @class BankParser_FADC
+ * @brief BankParser implementation for FADC250 data
  */
-class RawDataParser {
+class BankParser_FADC : public BankParser {
 public:
-    /**
-     * Parse a raw data block and extract physics events
-     * @param data_block The data block to parse
-     * @param rocid ROC ID
-     * @param m_physics_events Reference to physics events vector (will be updated)
-     * @param m_block_first_event_num First event number in the block
-     */
-    static void parseRawData(std::shared_ptr<evio::BaseStructure> data_block, 
-                            uint32_t rocid, 
-                            std::vector<PhysicsEvent*>& m_physics_events,
-                            uint64_t m_block_first_event_num);
+    void parse(std::shared_ptr<evio::BaseStructure> data_block,
+               uint32_t rocid,
+               std::vector<PhysicsEvent*>& physics_events,
+               uint64_t block_first_event_num) override;
 
 private:
-    /**
-     * Extract bits from a 32-bit word
-     * @param x The input word
-     * @param high High bit position (inclusive)
-     * @param low Low bit position (inclusive)
-     * @return Extracted bits
-     */
-    static uint32_t getBitsInRange(uint32_t x, int high, int low);
-    
+
     /**
      * Parse waveform data from data words
      * @param data_words Vector of data words
@@ -48,7 +32,7 @@ private:
      * @param waveform_len Expected waveform length
      * @return Parsed waveform hit
      */
-    static FADC250WaveformHit parseWaveformData(
+    FADC250WaveformHit parseWaveformData(
         const std::vector<uint32_t>& data_words,
         size_t& index,
         uint32_t trigger_num,
@@ -76,7 +60,7 @@ private:
      * @param pedestal_sum Pedestal sum
      * @return Vector of parsed pulse hits
      */
-    static std::vector<FADC250PulseHit> parsePulseData(
+    std::vector<FADC250PulseHit> parsePulseData(
         const std::vector<uint32_t>& data_words,
         size_t& index,
         uint32_t trigger_num,
@@ -91,4 +75,4 @@ private:
     );
 };
 
-#endif // RAWDATAPARSER_H
+#endif // BANKPARSER_FADC_H
