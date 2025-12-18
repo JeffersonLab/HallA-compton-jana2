@@ -136,6 +136,21 @@ You can specify a custom ROOT output filename:
 ./build/compton -PROOT_OUT_FILENAME=my_data.root <evio_file>
 ```
 
+### Valgrind memory leak check
+
+This project provides a helper CMake target for running Valgrind with ROOT suppressions:
+
+- From the build directory, run:
+
+```bash
+cmake --build . --target valgrind-check
+```
+
+This will:
+- Run `valgrind` on `./build/compton` using `scripts/valgrind_check.csh`
+- Store Valgrind output under `build/scripts/valgrind_check/valgrind_out.log`
+- Fail the target (non-zero exit) if any **definite** or **indirect** leaks are reported
+
 ## Project Structure
 
 ### Core application (framework and processing pipeline)
