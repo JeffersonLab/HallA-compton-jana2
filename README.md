@@ -7,19 +7,18 @@ A JANA2-based application for the Compton experiment to process data from EVIO-f
 The application uses a two-level event structure (block-level and physics event-level) to process EVIO data:
 
 1. **JEventSource_EVIO** reads EVIO files and creates block-level events:
-   - Extracts run numbers from run control events (tags 0xFFD0-0xFFDF) and skips them
-   - Wraps physics events in `EvioEventWrapper` objects and inserts them into block-level events
+   - Extracts run numbers from run-control events (tags 0xFFD0–0xFFDF) and skips those events
+   - In `Emit`, wraps each EVIO event in an `EvioEventWrapper` and inserts it into a block-level `JEvent`
+   - In `ProcessParallel`, uses `EvioEventParser` together with `BankParser` implementations
+     registered in `JEventService_BankParsersMap` to decode the wrapped EVIO blocks into
+     `PhysicsEvent` objects containing detector hits, and inserts those `PhysicsEvent` objects
+     into the same block-level event
 
-2. **JFactory_PhysicsEvent** processes block-level events:
-   - Extracts `EvioEventWrapper` objects from the event
-   - Uses `EvioEventParser` together with `BankParser` implementations registered in `JEventService_BankParsersMap` to decode each EVIO bank
-   - Creates `PhysicsEvent` objects containing detector hits (waveforms and pulses)
-
-3. **JEventUnfolder_EVIO** unfolds block-level events into physics event-level child events:
+2. **JEventUnfolder_EVIO** unfolds block-level events into physics event-level child events:
    - Takes `PhysicsEvent` objects from the block-level parent event
    - Creates individual physics event-level child events
 
-4. **JEventProcessor_Compton** processes physics event-level events:
+3. **JEventProcessor_Compton** processes physics event level events:
    - Receives FADC250 waveform and pulse hits
    - Writes waveform data to a ROOT TTree
    - Fills histograms with pulse integral distributions
@@ -156,8 +155,7 @@ This will:
 ### Core application (framework and processing pipeline)
 
 - `compton.cc` – Main application entry point that registers all components
-- `JEventSource_EVIO.cc/.h` – EVIO file event source (block-level events)
-- `JFactory_PhysicsEvent.cc/.h` – Factory that creates `PhysicsEvent` objects from EVIO events
+- `JEventSource_EVIO.cc/.h` – EVIO file event source (block-level events, plus `ProcessParallel` which creates `PhysicsEvent` objects)
 - `JEventUnfolder_EVIO.h` – Unfolder that creates physics event-level child events from block-level events
 - `JEventProcessor_Compton.cc/.h` – Main event processor that writes data to ROOT file
 

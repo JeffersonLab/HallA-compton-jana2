@@ -11,20 +11,18 @@
  * 2. Parsing the trigger bank to extract ROC segments and event number
  * 3. Parsing data banks to extract detector hits using BankParser
  */
-void EvioEventParser::parse() {
+void EvioEventParser::parse(const JEvent& event, std::vector<PhysicsEvent*>& physics_events) {
     // Get all child structures (Trigger Bank + ROC Banks)
-    auto evio_data_block = m_event.Get<EvioEventWrapper>().at(0)->evio_event;
+    auto evio_data_block = event.Get<EvioEventWrapper>().at(0)->evio_event;
     auto& children = evio_data_block->getChildren();
     
     // Parse the trigger bank to extract ROC segments and event number
-    auto trigger_bank_roc_segments = parseTriggerBank(children[0]);
+    TriggerData trigger_data(0);
+    auto trigger_bank_roc_segments = parseTriggerBank(children[0], trigger_data);
     
     // Parse the data banks while using the trigger bank ROC segments for validation
     std::vector<std::shared_ptr<evio::BaseStructure>> roc_banks(children.begin() + 1, children.end());
-    parseROCBanks(roc_banks, trigger_bank_roc_segments);
-    
-    // Mark the event as successfully parsed
-    m_is_parsed = true;
+    parseROCBanks(roc_banks, trigger_bank_roc_segments, trigger_data, physics_events);
 }
 
 /**
@@ -35,10 +33,12 @@ void EvioEventParser::parse() {
  * 2. Collect all ROC segments (UINT32 data type)
  * 3. Validate the number of ROC segments matches the header
  * 
- * @param trigger_bank The trigger bank structure to parse
+ * @param trigger_bank  The trigger bank structure to parse
+ * @param trigger_data  Output trigger metadata (first event number, etc.)
  * @return Vector of trigger bank ROC segments
  */
-std::vector<std::shared_ptr<evio::BaseStructure>> EvioEventParser::parseTriggerBank(std::shared_ptr<evio::BaseStructure> trigger_bank) {
+std::vector<std::shared_ptr<evio::BaseStructure>> EvioEventParser::parseTriggerBank(std::shared_ptr<evio::BaseStructure> trigger_bank,
+                                                                                    TriggerData& trigger_data) {
     // Get the number of ROC segments from the header
     int trigger_bank_rocs_count = static_cast<int>(trigger_bank->getHeader()->getNumber());
     auto trigger_bank_children = trigger_bank->getChildren();
@@ -74,11 +74,15 @@ std::vector<std::shared_ptr<evio::BaseStructure>> EvioEventParser::parseTriggerB
  * 2. Matching ROC IDs between trigger and data banks
  * 3. Parsing each data block using BankParser
  * 
- * @param data_banks Vector of data banks to parse
- * @param trigger_bank_roc_segments Vector of trigger bank ROC segments for validation
+ * @param data_banks                 Vector of data banks to parse
+ * @param trigger_bank_roc_segments  Vector of trigger bank ROC segments for validation
+ * @param trigger_data               Trigger metadata for this EVIO block
+ * @param physics_events             Output vector which will be filled with PhysicsEvent*
  */
 void EvioEventParser::parseROCBanks(const std::vector<std::shared_ptr<evio::BaseStructure>>& data_banks,
-                                     const std::vector<std::shared_ptr<evio::BaseStructure>>& trigger_bank_roc_segments) {
+                                     const std::vector<std::shared_ptr<evio::BaseStructure>>& trigger_bank_roc_segments,
+                                     TriggerData& trigger_data,
+                                     std::vector<PhysicsEvent*>& physics_events) {
     
     // Validate that the number of data banks matches the number of ROC segments
     // Expected: #ROCs == #TriggerBankROCsegments == #RemainingBanksAfterTriggerBank 
@@ -100,7 +104,7 @@ void EvioEventParser::parseROCBanks(const std::vector<std::shared_ptr<evio::Base
             throw JException("EvioEventParser::parseROCBanks: Trigger bank roc segment rocid != Data bank rocid -- %d != %d", tb_rocid, db_rocid);
         }
         
-        // Parse one or more dma banks within this ROC bank using the registered BankParsers
+        // Parse one or more DMA banks within this ROC bank using the registered BankParsers
         auto dma_blocks = db->getChildren();
         for (auto dma : dma_blocks) {
             auto bank_id = dma->getHeader()->getTag();
@@ -108,52 +112,8 @@ void EvioEventParser::parseROCBanks(const std::vector<std::shared_ptr<evio::Base
             if (bank_parser == nullptr) {
                 throw JException("EvioEventParser::parseROCBanks: No parser found for bank tag %d", bank_id);
             }
-            bank_parser->parse(dma, db_rocid, m_physics_events, trigger_data);
+            bank_parser->parse(dma, db_rocid, physics_events, trigger_data);
         }
     }
 }
 
-/**
- * @brief Get the parsed physics events
- * 
- * Returns the vector of PhysicsEvent pointers containing all parsed physics events.
- * 
- * @return Vector of PhysicsEvent pointers
- * @throws JException if called before the event is parsed
- */
-std::vector<PhysicsEvent*> EvioEventParser::getPhysicsEvents() const {
-    if(!m_is_parsed) {
-        throw JException("EvioEventParser::getPhysicsEvents: Trying to get events before the evio block is parsed");
-    }
-    return m_physics_events;
-}
-
-/**
- * @brief Identifies run control events and extracts run number from prestart events
- * 
- * Run control events have tags in the range 0xFFD0-0xFFDF. When a prestart event 
- * (tag 0xFFD1) is detected, the run number is extracted from the event data and 
- * stored in the run_number parameter.
- * 
- * @param event The EVIO event to examine
- * @param run_number Reference to run number (updated if prestart event found)
- * @return true if this was a run control event, false otherwise
- */
-bool EvioEventParser::isRunControlEvent(std::shared_ptr<evio::EvioEvent> event, int& run_number) {
-    std::shared_ptr<evio::BaseStructureHeader> header = event->getHeader();
-    uint16_t tag = header->getTag();
-    
-    if (tag >= 0xFFD0 && tag <= 0xFFDF) {
-        if (tag == 0xFFD1) { // prestart event
-            std::vector<uint32_t> data = event->getUIntData();
-            if (data.size() > 1) {
-                run_number = data[1];  // Run number is stored at index 1
-            } else {
-                throw JException("Prestart event has no data");
-            }
-        }
-        return true;
-    }
-    
-    return false; 
-}

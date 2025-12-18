@@ -36,7 +36,6 @@ set(SOURCES
     compton.cc                          # Main application entry point
     JEventSource_EVIO.cc                # Custom EVIO event source
     JEventProcessor_Compton.cc          # Main event processor
-    JFactory_PhysicsEvent.cc            # Factory for PhysicsEvent objects
 )
 
 # Add core parser code
