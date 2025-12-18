@@ -26,4 +26,11 @@ public:
         auto it = m_bank_parsers.find(bank_id);
         return (it != m_bank_parsers.end()) ? it->second : nullptr;
     }
+
+    /// Destructor to clean up the bank parsers
+    ~JEventService_BankParsersMap() override {
+        for (auto &entry : m_bank_parsers) {
+            delete entry.second;
+        }
+    }
 };

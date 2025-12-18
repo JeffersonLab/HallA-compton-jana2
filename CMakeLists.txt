@@ -69,3 +69,5 @@ target_link_libraries(compton
         ${USER_PARSER_LIBS}  # All user parser libraries (FADC, FADCScaler, ITScaler, ...)
 )
 
+# Add helper scripts
+add_subdirectory(scripts)
