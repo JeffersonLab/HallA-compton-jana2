@@ -2,6 +2,7 @@
 #include "JEventSource_EVIO.h"
 #include "EvioEventWrapper.h"
 #include "EvioEventParser.h"
+#include "PhysicsEvent.h"
 
 #include <JANA/JApplication.h>
 #include <JANA/JEvent.h>
@@ -43,6 +44,10 @@ void JEventSource_EVIO::Open() {
     const std::string resource_name = GetResourceName();
     /// Open the file here!
     m_evio_reader = std::make_unique<evio::EvioReader>(resource_name);
+
+    // Create EVIO event parser, JApplication is used to access
+    // registered BankParsers through the JEventService_BankParsersMap
+    m_evio_event_parser = std::make_unique<EvioEventParser>(GetApplication());
 }
 
 /**
@@ -81,7 +86,7 @@ JEventSource::Result JEventSource_EVIO::Emit(JEvent& event) {
 
     // Check if this is a run control event. Apart from extracting the run number,
     // these events are not useful for further processing, so get run number and skip.
-    if (EvioEventParser::isRunControlEvent(evio_event, m_run_number)) {
+    if (isRunControlEvent(evio_event, m_run_number)) {
         return Result::FailureTryAgain;
     }
 
@@ -100,6 +105,27 @@ JEventSource::Result JEventSource_EVIO::Emit(JEvent& event) {
  */
 std::string JEventSource_EVIO::GetDescription() {
     return "EVIO event source for Compton experiment data";
+}
+
+/**
+ * @brief Decode EVIO data into PhysicsEvent objects in parallel
+ *
+ * This method is called by JANA after `Emit()` when `EnableProcessParallel(true)` is set.
+ * It takes the block-level `JEvent` (which already contains an `EvioEventWrapper`),
+ * uses `EvioEventParser` together with registered `BankParser` implementations to
+ * decode the EVIO banks into `PhysicsEvent` objects, and inserts those objects into
+ * the same block-level event so that downstream `JEventUnfolder_EVIO`
+ * can consume them.
+ *
+ * @param event Block-level JEvent containing an `EvioEventWrapper`
+ */
+void JEventSource_EVIO::ProcessParallel(JEvent& event) const {
+    std::vector<PhysicsEvent*> physics_events;
+    // Parse the EVIO block-level event into PhysicsEvent objects in parallel.
+    // The parser is shared, but contains no per-event mutable state; all
+    // event-specific data (TriggerData, PhysicsEvent pointers) is local.
+    m_evio_event_parser->parse(event, physics_events);
+    event.Insert(physics_events);
 }
 
 /**
@@ -123,4 +149,34 @@ double JEventSourceGeneratorT<JEventSource_EVIO>::CheckOpenable(std::string reso
     }  
     
     return 0.0;  // Cannot handle other file types  
+}
+
+/**
+ * @brief Identifies run control events and extracts run number from prestart events
+ *
+ * Run control events have tags in the range 0xFFD0-0xFFDF. When a prestart event
+ * (tag 0xFFD1) is detected, the run number is extracted from the event data and
+ * stored in the run_number parameter.
+ *
+ * @param event       EVIO event to examine
+ * @param run_number  Reference to run number (updated if prestart event found)
+ * @return true if this was any run control event, false otherwise
+ */
+bool JEventSource_EVIO::isRunControlEvent(std::shared_ptr<evio::EvioEvent> event, int& run_number) {
+    std::shared_ptr<evio::BaseStructureHeader> header = event->getHeader();
+    uint16_t tag = header->getTag();
+    
+    if (tag >= 0xFFD0 && tag <= 0xFFDF) {
+        if (tag == 0xFFD1) { // prestart event
+            std::vector<uint32_t> data = event->getUIntData();
+            if (data.size() > 1) {
+                run_number = data[1];  // Run number is stored at index 1
+            } else {
+                throw JException("Prestart event has no data");
+            }
+        }
+        return true;
+    }
+    
+    return false; 
 }

@@ -10,12 +10,10 @@
 #include <JANA/CLI/JMain.h>             // Command line options parsing utilities
 #include <JANA/Services/JParameterManager.h>  // Parameter management system
 #include <JANA/JEventSourceGeneratorT.h>     // Event source generator template
-#include <JANA/JFactoryGenerator.h>     // Factory generator template
 
 // Experiment specific components
 #include "JEventSource_EVIO.h"              // EVIO file event source
 #include "JEventProcessor_Compton.h"        // Main event processor
-#include "JFactory_PhysicsEvent.h"         // PhysicsEvent factory
 #include "JEventUnfolder_EVIO.h"           // Event unfolder
 #include "JEventService_BankParsersMap.h"  // Service for mapping bank IDs to bank parsers
 #include "BankParser_FADC.h"              // FADC250 bank parser implementation
@@ -55,8 +53,7 @@ int main(int argc, char* argv[]) {
     } 
 
     // Register all application components
-    app.Add(new JEventSourceGeneratorT<JEventSource_EVIO>());  // EVIO file reader
-    app.Add(new JFactoryGeneratorT<JFactory_PhysicsEvent>());  // PhysicsEvent factory
+    app.Add(new JEventSourceGeneratorT<JEventSource_EVIO>());  // EVIO file reader (creates PhysicsEvent objects in ProcessParallel)
     app.Add(new JEventUnfolder_EVIO());                        // Event unfolder
     app.Add(new JEventProcessor_Compton());                    // Data processor
 

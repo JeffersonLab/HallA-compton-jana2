@@ -37,11 +37,9 @@ public:
      * 
      * Data flow:
      * 1. JEventSource_EVIO reads EVIO file and creates block-level events with EvioEventWrapper
-     * 2. JFactory_PhysicsEvent processes EvioEventWrapper and produces PhysicsEvent objects
+     * 2. JEventSource_EVIO::ProcessParallel uses EvioEventParser and BankParser implementations
+     *    to decode EVIO banks into PhysicsEvent objects and inserts them into the block event
      * 3. This unfolder creates child physics events, each containing info from one PhysicsEvent
-     * 
-     * Note: Input<PhysicsEvent> declared in JEventUnfolder_EVIO.h automatically triggers 
-     * JFactory_PhysicsEvent at the Block level to produce PhysicsEvent objects.
      * 
      * @param parent The block-level parent event containing PhysicsEvent objects
      * @param child The physics event-level child event to populate with hits
