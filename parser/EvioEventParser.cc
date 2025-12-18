@@ -2,7 +2,6 @@
 #include <JANA/JException.h>
 #include "JEventService_BankParsersMap.h"
 #include "EvioEventWrapper.h"
-#include "BankParser_FADC.h"
 
 /**
  * @brief Parse the EVIO event and extract all detector hits
@@ -47,7 +46,7 @@ std::vector<std::shared_ptr<evio::BaseStructure>> EvioEventParser::parseTriggerB
     // Extract event number from the first segment (EB1)
     auto eb1_segment = trigger_bank_children.at(0);
     std::vector<uint64_t> eb1_data = eb1_segment->getULongData();
-    m_block_first_event_num = static_cast<uint64_t>(eb1_data[0]);
+    trigger_data.first_event_number = static_cast<uint64_t>(eb1_data[0]);
     
     // Collect all ROC segments (UINT32 data type)
     std::vector<std::shared_ptr<evio::BaseStructure>> trigger_bank_rocs_data;
@@ -109,7 +108,7 @@ void EvioEventParser::parseROCBanks(const std::vector<std::shared_ptr<evio::Base
             if (bank_parser == nullptr) {
                 throw JException("EvioEventParser::parseROCBanks: No parser found for bank tag %d", bank_id);
             }
-            bank_parser->parse(dma, db_rocid, m_physics_events, m_block_first_event_num);
+            bank_parser->parse(dma, db_rocid, m_physics_events, trigger_data);
         }
     }
 }

@@ -6,6 +6,7 @@
 #include "eviocc.h"
 #include "EventHits.h"
 #include "PhysicsEvent.h"
+#include "TriggerData.h"
 
 /**
  * @class BankParser
@@ -24,18 +25,19 @@ public:
     /**
      * @brief Parse a raw data block and extract physics events
      *
-     * @param data_block            EVIO data block to parse
-     * @param rocid                 ROC ID for this data block
-     * @param physics_events        Vector to be filled with PhysicsEvent*.
-     *                              The parser is responsible for allocating
-     *                              PhysicsEvent objects; ownership is handed
-     *                              to the caller.
-     * @param block_first_event_num First event number in the EVIO block
+     * @param data_block             EVIO data block to parse
+     * @param rocid                  ROC ID for this data block
+     * @param physics_events         Vector to be filled with PhysicsEvent*.
+     *                               The parser is responsible for allocating
+     *                               PhysicsEvent objects; ownership is handed
+     *                               to the caller.
+     * @param trigger_data         Metadata (event number, etc.)
+     *                             from the trigger bank.
      */
     virtual void parse(std::shared_ptr<evio::BaseStructure> data_block,
                        uint32_t rocid,
                        std::vector<PhysicsEvent*>& physics_events,
-                       uint64_t block_first_event_num) = 0;
+                       TriggerData& trigger_data) = 0;
 
 protected:
     /// Extract bits from a 32-bit word (utility shared by derived parsers)

@@ -1,6 +1,6 @@
 # FADC250 Data Processing Application
 
-A JANA2-based application for compton experiment to process data from EVIO-format files.
+A JANA2-based application for the Compton experiment to process data from EVIO-format files.
 
 ## Data Processing Flow
 
@@ -138,34 +138,40 @@ You can specify a custom ROOT output filename:
 
 ## Project Structure
 
-### Core Application Files
+### Core application (framework and processing pipeline)
+
 - `compton.cc` – Main application entry point that registers all components
 - `JEventSource_EVIO.cc/.h` – EVIO file event source (block-level events)
-- `JFactory_PhysicsEvent.cc/.h` – Factory that creates PhysicsEvent objects from EVIO events
+- `JFactory_PhysicsEvent.cc/.h` – Factory that creates `PhysicsEvent` objects from EVIO events
 - `JEventUnfolder_EVIO.h` – Unfolder that creates physics event-level child events from block-level events
 - `JEventProcessor_Compton.cc/.h` – Main event processor that writes data to ROOT file
 
-### Data Objects (`parser/data_objects/` and `user_parsers/FADC/data_objects/`)
+### Core parser area (`parser/`) – generic infrastructure
+
+- `parser/EvioEventParser.cc/.h` – EVIO event parsing utilities (block-level to `PhysicsEvent` objects)
+- `parser/BankParser.h` – Base interface for all bank parsers (hardware-agnostic)
 - `parser/data_objects/PhysicsEvent.h` – Container for physics event data including event number and hits
 - `parser/data_objects/EventHits.h` – Abstract container interface for all event hits
-- `parser/data_objects/EvioEventWrapper.h` – JANA2 object wrapper for EVIO events (allows `std::shared_ptr` to be passed through JANA2 pipeline)
-- `user_parsers/FADC/data_objects/FADC250Hit.h` – Base class for all FADC250 hits
-- `user_parsers/FADC/data_objects/FADC250PulseHit.h` – Pulse hit data structure
-- `user_parsers/FADC/data_objects/FADC250WaveformHit.h` – Waveform hit data structure
-- `user_parsers/FADC/data_objects/EventHits_FADC.h` – FADC-specific implementation of `EventHits` that knows how to insert hits into a `JEvent`
-
-### Parser Utilities (`parser/`)
-- `parser/EvioEventParser.cc/.h` – EVIO event parsing utilities
-- `parser/BankParser.h` – Base interface for all bank parsers (hardware-agnostic)
+- `parser/data_objects/EvioEventWrapper.h` – JANA2 object wrapper for EVIO events (allows `std::shared_ptr` to be passed through the JANA2 pipeline)
+- `parser/data_objects/TriggerData.h` – Simple POD holding trigger metadata for an EVIO block
 - `JEventService_BankParsersMap.h` – JANA service mapping bank IDs to `BankParser` implementations
 
-### User Parsers (`user_parsers/`)
+This core parser area is intended to stay generic; you normally do **not** add hardware-specific code here.
 
-User-defined hardware parsers live under `user_parsers/`. The provided example for FADC250 is in `user_parsers/FADC/`.
+### User extension area (`user_parsers/`) – where to add your hardware code
+
+User-defined hardware parsers live under `user_parsers/`. Each hardware type gets its own subdirectory, with
+its hits and parser implementation plus a small CMake file. The central `user_parsers/CMakeLists.txt` file
+adds all subdirectories and collects their libraries into `USER_PARSER_LIBS`, which the main executable links.
 
 - **FADC250 example**
   - `user_parsers/FADC/BankParser_FADC.cc/.h` – `BankParser` implementation for FADC250 data
   - `user_parsers/FADC/data_objects/` – FADC-specific hit and event container classes
+
+Other provided examples:
+
+- `user_parsers/FADCScaler/` – FADC scaler bank parser and scaler hit data objects
+- `user_parsers/ITScaler/` – IT scaler bank parser and scaler hit data objects
 
 ## Adding a new bank parser (step by step)
 
@@ -190,7 +196,7 @@ User-defined hardware parsers live under `user_parsers/`. The provided example f
    - In `user_parsers/MyHW/BankParser_MyHW.h`:
      - Include `BankParser.h` and your hit / `EventHits` headers.
      - Declare a class `BankParser_MyHW : public BankParser` and override:
-       - `void parse(std::shared_ptr<evio::BaseStructure> data_block, uint32_t rocid, std::vector<PhysicsEvent*>& physics_events, uint64_t block_first_event_num) override;`
+       - `void parse(std::shared_ptr<evio::BaseStructure> data_block, uint32_t rocid, std::vector<PhysicsEvent*>& physics_events, TriggerData& block_first_event_data) override;`
    - In `user_parsers/MyHW/BankParser_MyHW.cc`:
      - Implement `parse(...)` by:
        - Extracting 32-bit words from the EVIO bank (`getUIntData()`).
@@ -200,12 +206,19 @@ User-defined hardware parsers live under `user_parsers/`. The provided example f
      - Reuse `BankParser::getBitsInRange(...)` helper to extract bit fields, similar to `BankParser_FADC`.
 
 5. **Expose your new parser to CMake**
-   - Edit `CMakeLists.txt`:
-     - Add your implementation file to the `SOURCES` list, for example:
-       - `user_parsers/MyHW/BankParser_MyHW.cc`
-     - Add include directories if needed:
-       - `${CMAKE_CURRENT_SOURCE_DIR}/user_parsers/MyHW`
-       - `${CMAKE_CURRENT_SOURCE_DIR}/user_parsers/MyHW/data_objects`
+   - Add a dedicated CMake file for your parser, similar to the existing ones:
+     - Create `user_parsers/MyHW/CMakeLists.txt` which:
+       - Defines a library for your parser, for example:
+         - `add_library(myhw_parsers STATIC BankParser_MyHW.cc)`
+       - Adds include directories for your headers, e.g.:
+         - `target_include_directories(myhw_parsers PUBLIC ${PROJECT_SOURCE_DIR}/user_parsers/MyHW ${PROJECT_SOURCE_DIR}/user_parsers/MyHW/data_objects)`
+       - Links against the core `parser` library:
+         - `target_link_libraries(myhw_parsers PUBLIC parser)`
+   - Update `user_parsers/CMakeLists.txt` to:
+     - Add your subdirectory:
+       - `add_subdirectory(MyHW)`
+     - Extend the `USER_PARSER_LIBS` list with your new library target:
+       - `set(USER_PARSER_LIBS ${USER_PARSER_LIBS} myhw_parsers PARENT_SCOPE)`
 
 6. **Register the parser with the service**
    - In `compton.cc`, after creating the application and service:

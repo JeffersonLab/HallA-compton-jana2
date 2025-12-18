@@ -8,7 +8,7 @@
 #include "eviocc.h"
 
 /**
- * @struct EvioEventWrapper
+ * @class EvioEventWrapper
  * @brief JANA2 object wrapper for EVIO events
  * 
  * This class wraps EVIO events as JANA2 objects, allowing them to be passed
@@ -22,7 +22,10 @@
  * however, it is highly encouraged to keep them flat and include only primitive datatypes if possible.
  * Think of a JObject as being a row in a database table, with event number as an implicit foreign key.
  */
-struct EvioEventWrapper : public JObject {
+class EvioEventWrapper : public JObject {
+
+public:
+
     JOBJECT_PUBLIC(EvioEventWrapper)
 
     std::shared_ptr<evio::EvioEvent> evio_event;
@@ -49,7 +52,6 @@ struct EvioEventWrapper : public JObject {
         std::string eventStr = evio_event->toString();
         summary.add(eventStr, "evio_event", "%s", "EVIO event summary");
     }
-
 };
 
 #endif // _EvioEventWrapper_h_

@@ -1,0 +1,50 @@
+#include "BankParser_FADCScaler.h"
+#include <JANA/JException.h>
+
+/**
+ * @brief Parse a raw data block and extract scaler hits
+ *
+ * This method parses the raw FADC scaler data block by:
+ * 1. Processing data words sequentially
+ * 2. Interpreting each group of words as a scaler record
+ * 3. Filling FADCScalerHit objects and storing them in EventHits_FADCScaler
+ *
+ * @param data_block The data block to parse
+ * @param rocid ROC ID for this data block
+ * @param physics_events Reference to physics events vector (will be updated)
+ * @param trigger_data Trigger data for the EVIO block
+ */
+void BankParser_FADCScaler::parse(std::shared_ptr<evio::BaseStructure> data_block,
+                                  uint32_t rocid,
+                                  std::vector<PhysicsEvent*>& physics_events,
+                                  TriggerData& trigger_data) {
+
+    // There will be only one PhysicsEvent per block for this scaler bank
+    PhysicsEvent* event = new PhysicsEvent();
+    event->SetEventNumber(static_cast<int>(trigger_data.first_event_number));
+
+    auto event_hits = std::make_shared<EventHits_FADCScaler>();
+
+    // Get all data words from the block
+    std::vector<uint32_t> data_words = data_block->getUIntData();
+
+    // One bank can have multiple hits, each with different slot number
+    for (size_t i = 0; i < data_words.size(); i++) {
+        auto* hit = new FADCScalerHit();
+        hit->rocid = rocid;
+
+        // Parse header word
+        hit->words_idx = getBitsInRange(data_words[i], 31, 16);
+        hit->slot      = getBitsInRange(data_words[i], 15, 8);
+        hit->ncounts   = getBitsInRange(data_words[i], 7, 0);
+
+        // Parse following scaler count words
+        for (int j = 0; j < 16 && (i + 1) < data_words.size(); j++) {
+            hit->counts[j] = data_words[++i];
+        }
+        event_hits->scalers.push_back(hit);
+    }
+
+    event->SetHits(event_hits);
+    physics_events.push_back(event);
+}
