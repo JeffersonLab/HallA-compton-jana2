@@ -12,6 +12,7 @@
 #include "BankParser.h"
 #include "EventHits.h"
 #include "PhysicsEvent.h"
+#include "TriggerData.h"
 
 /**
  * Class for processing a single EVIO event
@@ -22,8 +23,8 @@ private:
     const JEvent& m_event;
     JApplication* m_app;
     std::vector<PhysicsEvent*> m_physics_events;
-    uint64_t m_block_first_event_num;
     bool m_is_parsed;
+    TriggerData trigger_data;
     
     /**
      * Parse trigger bank and extract ROC segments
@@ -47,7 +48,11 @@ public:
      * @param event The EVIO event to parse
      */
     EvioEventParser(JApplication* app, const JEvent& event) 
-        : m_app(app), m_event(event), m_block_first_event_num(0), m_is_parsed(false) {};
+        : m_event(event),
+          m_app(app),
+          m_physics_events(),
+          m_is_parsed(false),
+          trigger_data(0) {};
     
     /**
      * Destructor

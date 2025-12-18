@@ -6,8 +6,14 @@
 #include <TTree.h>
 #include <TH1.h>
 
+#include <fstream>
+#include <string>
+#include <vector>
+
 #include <JANA/JEventProcessor.h>
 #include "EventHits_FADC.h"
+#include "FADCScalerHit.h"
+#include "ITScalerHit.h"
 
 /**
  * @struct WaveformTreeRow
@@ -40,7 +46,9 @@ class JEventProcessor_Compton : public JEventProcessor {
 private:
     // Declare Inputs
     Input<FADC250WaveformHit> m_waveform_hits_in {this}; 
-    Input<FADC250PulseHit> m_pulse_hits_in {this};
+    Input<FADC250PulseHit>    m_pulse_hits_in {this};
+    Input<FADCScalerHit>      m_fadc_scaler_hits_in {this};
+    Input<ITScalerHit>        m_it_scaler_hits_in {this};
 
     /**
      * @brief ROOT output filename parameter
@@ -56,6 +64,14 @@ private:
      */
     Parameter<std::string> m_root_output_filename {this, "ROOT_OUT_FILENAME", "compton.root", "Output file name for ROOT data", true};
 
+    /**
+     * @brief Text output filename parameter
+     *
+     * Text file where per-event summaries of waveform, pulse, and scaler
+     * hits are written.
+     */
+    Parameter<std::string> m_txt_output_filename {this, "TXT_OUT_FILENAME", "compton_hits.txt", "Output text file name for event hit summaries", true};
+
     // ROOT Tree variables 
     std::vector<uint32_t> ev_slot;
     std::vector<uint32_t> ev_chan;
@@ -68,6 +84,9 @@ private:
     TTree *m_waveform_tree;                   ///< ROOT tree for waveform data
     TTree *m_tree;                            ///< ROOT tree for physics event
     TH1I *m_pulse_integral_hist;              ///< Histogram of pulse integral sums
+
+    // Text output for human-readable dump of hits per event
+    std::ofstream m_txt_output_file;
 
 public:
 

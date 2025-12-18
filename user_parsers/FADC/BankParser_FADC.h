@@ -14,7 +14,7 @@ public:
     void parse(std::shared_ptr<evio::BaseStructure> data_block,
                uint32_t rocid,
                std::vector<PhysicsEvent*>& physics_events,
-               uint64_t block_first_event_num) override;
+               TriggerData& trigger_data) override;
 
 private:
 

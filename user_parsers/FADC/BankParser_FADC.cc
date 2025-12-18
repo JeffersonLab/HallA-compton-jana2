@@ -18,7 +18,7 @@
 void BankParser_FADC::parse(std::shared_ptr<evio::BaseStructure> data_block,
                                uint32_t rocid,
                                std::vector<PhysicsEvent*>& physics_events,
-                               uint64_t block_first_event_num) {
+                               TriggerData& trigger_data) {
     // Get all data words from the block
     std::vector<uint32_t> data_words = data_block->getUIntData();
     
@@ -55,13 +55,13 @@ void BankParser_FADC::parse(std::shared_ptr<evio::BaseStructure> data_block,
                 }
                 block_nevents = -1;
                 if (j == data_words.size() - 1 && event_hits != nullptr) { // because in that case event is not followed by any event header later
-                    PhysicsEvent* physics_event = new PhysicsEvent(block_first_event_num + event_index, event_hits);
+                    PhysicsEvent* physics_event = new PhysicsEvent(trigger_data.first_event_number + event_index, event_hits);
                     physics_events.push_back(physics_event);
                 }
                 event_index = 0;
             } else if (data_type == 2) { // Event header
                 if (event_hits != nullptr) { // insert previous event into physics_events first
-                    PhysicsEvent* physics_event = new PhysicsEvent(block_first_event_num + event_index, event_hits);
+                    PhysicsEvent* physics_event = new PhysicsEvent(trigger_data.first_event_number + event_index, event_hits);
                     physics_events.push_back(physics_event);
                     event_index++;
                 }

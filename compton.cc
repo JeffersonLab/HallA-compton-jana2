@@ -19,6 +19,8 @@
 #include "JEventUnfolder_EVIO.h"           // Event unfolder
 #include "JEventService_BankParsersMap.h"  // Service for mapping bank IDs to bank parsers
 #include "BankParser_FADC.h"              // FADC250 bank parser implementation
+#include "BankParser_FADCScaler.h"        // FADC scaler bank parser implementation
+#include "BankParser_ITScaler.h"        // IT scaler bank parser implementation
 
 /**
  * @brief Main function for experiment data processing application
@@ -65,13 +67,13 @@ int main(int argc, char* argv[]) {
     app.Initialize(); // This will initialize the application and make services available
 
     // Get bank parser service and register parser implementations
-    auto raw_parsers_service = app.GetService<JEventService_BankParsersMap>();
-    raw_parsers_service->addParser(250, new BankParser_FADC());
+    auto bank_parsers_svc = app.GetService<JEventService_BankParsersMap>();
+    bank_parsers_svc->addParser(250, new BankParser_FADC());
+    bank_parsers_svc->addParser(9250, new BankParser_FADCScaler());
+    bank_parsers_svc->addParser(9001, new BankParser_ITScaler());
 
     // Run the application
     app.Run();
-
-
 
     // Retrieve and return the exit code
     return app.GetExitCode();
