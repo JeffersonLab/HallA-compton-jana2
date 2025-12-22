@@ -1,7 +1,12 @@
-#include "EvioEventParser.h"
+#include <iostream>
+
 #include <JANA/JException.h>
-#include "JEventService_BankParsersMap.h"
+
+#include "EvioEventParser.h"
 #include "EvioEventWrapper.h"
+
+#include "JEventService_FilterDB.h"
+#include "JEventService_BankParsersMap.h"
 
 /**
  * @brief Parse the EVIO event and extract all detector hits
@@ -90,6 +95,11 @@ void EvioEventParser::parseROCBanks(const std::vector<std::shared_ptr<evio::Base
         throw JException("EvioEventParser::parseROCBanks: #ROC databanks != #ROC segments in trigger bank -- %d != %d", data_banks.size(), trigger_bank_roc_segments.size());
     }
     
+    auto filter_db_svc = m_app->GetService<JEventService_FilterDB>();
+    if (filter_db_svc == nullptr) {
+        throw JException("EvioEventParser::parseROCBanks: Filter database service not found");
+    }
+
     // Process each data bank
     for (size_t i = 0; i < data_banks.size(); i++) {
         auto db = data_banks[i];
@@ -103,15 +113,31 @@ void EvioEventParser::parseROCBanks(const std::vector<std::shared_ptr<evio::Base
         if(tb_rocid != db_rocid) {
             throw JException("EvioEventParser::parseROCBanks: Trigger bank roc segment rocid != Data bank rocid -- %d != %d", tb_rocid, db_rocid);
         }
+
+        // Check if ROC is allowed
+        if (!filter_db_svc->isROCAllowed(db_rocid)) {
+            std::cout << "ROC " << db_rocid << " is not allowed" << std::endl;
+            continue;
+        }
         
         // Parse one or more DMA banks within this ROC bank using the registered BankParsers
         auto dma_blocks = db->getChildren();
         for (auto dma : dma_blocks) {
             auto bank_id = dma->getHeader()->getTag();
+
+            // Check if bank is allowed for this ROC
+            if (!filter_db_svc->isBankAllowed(db_rocid, bank_id)) {
+                std::cout << "Bank " << bank_id << " is not allowed for ROC " << db_rocid << std::endl;
+                continue;
+            }
+
+            // Get bank parser
             auto bank_parser = m_app->GetService<JEventService_BankParsersMap>()->getParser(bank_id);
             if (bank_parser == nullptr) {
                 throw JException("EvioEventParser::parseROCBanks: No parser found for bank tag %d", bank_id);
             }
+
+            // Parse bank
             bank_parser->parse(dma, db_rocid, physics_events, trigger_data);
         }
     }

@@ -14,11 +14,12 @@
 // Experiment specific components
 #include "JEventSource_EVIO.h"              // EVIO file event source
 #include "JEventProcessor_Compton.h"        // Main event processor
-#include "JEventUnfolder_EVIO.h"           // Event unfolder
-#include "JEventService_BankParsersMap.h"  // Service for mapping bank IDs to bank parsers
-#include "BankParser_FADC.h"              // FADC250 bank parser implementation
-#include "BankParser_FADCScaler.h"        // FADC scaler bank parser implementation
-#include "BankParser_ITScaler.h"        // IT scaler bank parser implementation
+#include "JEventUnfolder_EVIO.h"            // Event unfolder
+#include "JEventService_FilterDB.h"         // Service for ROC/bank filtering
+#include "JEventService_BankParsersMap.h"   // Service for mapping bank IDs to bank parsers
+#include "BankParser_FADC.h"                // FADC250 bank parser implementation
+#include "BankParser_FADCScaler.h"          // FADC scaler bank parser implementation
+#include "BankParser_ITScaler.h"            // IT scaler bank parser implementation
 
 /**
  * @brief Main function for experiment data processing application
@@ -26,7 +27,7 @@
  * This function:
  * 1. Parses command line arguments and parameters
  * 2. Creates and configures the JANA2 application
- * 3. Registers all necessary components (event source, processor, factory)
+ * 3. Registers all necessary components and services
  * 4. Initializes and runs the application
  * 
  * @param argc Number of command line arguments
@@ -57,13 +58,14 @@ int main(int argc, char* argv[]) {
     app.Add(new JEventUnfolder_EVIO());                        // Event unfolder
     app.Add(new JEventProcessor_Compton());                    // Data processor
 
-    // Register bank parser service
+    // Register services
+    app.ProvideService(std::make_shared<JEventService_FilterDB>());
     app.ProvideService(std::make_shared<JEventService_BankParsersMap>());
 
     // Initialize the application
     app.Initialize(); // This will initialize the application and make services available
 
-    // Get bank parser service and register parser implementations
+    // Register bank parser implementations
     auto bank_parsers_svc = app.GetService<JEventService_BankParsersMap>();
     bank_parsers_svc->addParser(250, new BankParser_FADC());
     bank_parsers_svc->addParser(9250, new BankParser_FADCScaler());
