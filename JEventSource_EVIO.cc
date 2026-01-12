@@ -129,29 +129,6 @@ void JEventSource_EVIO::ProcessParallel(JEvent& event) const {
 }
 
 /**
- * @brief Check if this event source can handle a given file
- * 
- * Determines the confidence level that this event source can handle a given
- * file.
- * 
- * @param resource_name Name/path of the resource to check
- * @return Confidence level (0.0 = cannot handle, {0.0, 1.0}= Can handle, with this confidence level)
- */
-template <>
-double JEventSourceGeneratorT<JEventSource_EVIO>::CheckOpenable(std::string resource_name) {
-    
-    /// To determine confidence level, feel free to open up the file and check for magic bytes or metadata.
-    
-    // Check if the file has .evio extension  
-    if (resource_name.size() >= 5 &&   
-        resource_name.substr(resource_name.size() - 5) == ".evio") {  
-        return 1.0;  // High confidence for .evio files  
-    }  
-    
-    return 0.0;  // Cannot handle other file types  
-}
-
-/**
  * @brief Identifies run control events and extracts run number from prestart events
  *
  * Run control events have tags in the range 0xFFD0-0xFFDF. When a prestart event
@@ -179,4 +156,38 @@ bool JEventSource_EVIO::isRunControlEvent(std::shared_ptr<evio::EvioEvent> event
     }
     
     return false; 
+}
+
+
+/**
+ * @brief Check if this event source can handle a given file
+ * 
+ * Validates that the specified file is a valid EVIO file by attempting to open
+ * it with EvioReader.
+ * 
+ * The function is called by JANA2's event source generator system to determine
+ * which event source should handle a given file. A higher confidence value
+ * indicates a better match.
+ * 
+ * @param resource_name Name/path of the resource (file) to check
+ * @return Confidence level:
+ *         - 1.0 if the file can be opened and is a valid EVIO file (high confidence)
+ *         - 0.0 if the file cannot be opened or is not a valid EVIO file (cannot handle)
+ */
+template <>
+double JEventSourceGeneratorT<JEventSource_EVIO>::CheckOpenable(std::string resource_name) {
+    
+    try {
+        // Attempt to create EvioReader to open and validate the file
+        // This will throw an exception if the file is not a valid EVIO file,
+        // cannot be opened, or has an invalid format structure
+        evio::EvioReader reader(resource_name);
+        
+        // If we reach here, the file was successfully opened and validated as EVIO
+        return 1.0;
+    } 
+    catch (const std::exception& e) {
+        // File validation failed - either not an EVIO file or cannot be opened
+        return 0.0;
+    }
 }
