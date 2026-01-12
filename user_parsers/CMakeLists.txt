@@ -5,7 +5,7 @@
 # Add individual user parser subdirectories
 add_subdirectory(FADC)
 add_subdirectory(FADCScaler)
-add_subdirectory(ITScaler)
+add_subdirectory(TIScaler)
 
 # Collect all user parser libraries in a single variable that the top-level
 # CMakeLists.txt can link against. When adding a new parser library, extend
@@ -13,7 +13,7 @@ add_subdirectory(ITScaler)
 set(USER_PARSER_LIBS
     fadc_parsers
     fadc_scaler_parsers
-    itscaler_parsers
+    tiscaler_parsers
     PARENT_SCOPE
 )
 

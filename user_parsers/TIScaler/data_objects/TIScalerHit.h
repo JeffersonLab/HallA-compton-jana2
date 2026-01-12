@@ -1,15 +1,15 @@
-#ifndef ITSCALERHIT_H
-#define ITSCALERHIT_H
+#ifndef TISCALERHIT_H
+#define TISCALERHIT_H
 
 #include <cstdint>
 
 /**
- * @class ITScalerHit
- * @brief Hit class for IT scaler data
+ * @class TIScalerHit
+ * @brief Hit class for TI scaler data
  * 
- * This class contains the data members for one IT scaler record.
+ * This class contains the data members for one TI scaler record.
  */
-class ITScalerHit {
+class TIScalerHit {
 public:
     uint32_t rocid;
     uint32_t words_idx;
@@ -30,7 +30,7 @@ public:
 
 
     /// Default constructor: initializes all members to zero.
-    ITScalerHit()
+    TIScalerHit()
         : rocid(0),
           words_idx(0),
           slot(0),
@@ -47,4 +47,5 @@ public:
           ts_inputs_before_busy(0) {}
 };
 
-#endif // ITSCALERHIT_H
+#endif // TISCALERHIT_H
+

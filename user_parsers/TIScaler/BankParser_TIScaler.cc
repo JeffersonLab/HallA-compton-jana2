@@ -1,4 +1,4 @@
-#include "BankParser_ITScaler.h"
+#include "BankParser_TIScaler.h"
 #include <JANA/JException.h>
 
 /**
@@ -7,14 +7,14 @@
  * This method parses the raw FADC scaler data block by:
  * 1. Processing data words sequentially
  * 2. Interpreting each group of words as a scaler record
- * 3. Filling ITScalerHit objects and storing them in EventHits_ITScaler
+ * 3. Filling TIScalerHit objects and storing them in EventHits_TIScaler
  *
  * @param data_block The data block to parse
  * @param rocid ROC ID for this data block
  * @param physics_events Reference to physics events vector (will be updated)
  * @param trigger_data Trigger data for the EVIO block
  */
-void BankParser_ITScaler::parse(std::shared_ptr<evio::BaseStructure> data_block,
+void BankParser_TIScaler::parse(std::shared_ptr<evio::BaseStructure> data_block,
                                   uint32_t rocid,
                                   std::vector<PhysicsEvent*>& physics_events,
                                   TriggerData& trigger_data) {
@@ -22,16 +22,16 @@ void BankParser_ITScaler::parse(std::shared_ptr<evio::BaseStructure> data_block,
     // There will be only one PhysicsEvent per block for this scaler bank
     PhysicsEvent* event = new PhysicsEvent();
 
-    auto event_hits = std::make_shared<EventHits_ITScaler>();
+    auto event_hits = std::make_shared<EventHits_TIScaler>();
 
     // Get all data words from the block
     std::vector<uint32_t> data_words = data_block->getUIntData();
 
-    auto* hit = new ITScalerHit();
+    auto* hit = new TIScalerHit();
     hit->rocid = rocid;
     // Sanity check: need at least 1 header word + 12 scaler words
     if (data_words.size() < 13) {
-        throw JException("BankParser_ITScaler::parse: Not enough words (%zu) for IT scaler bank", data_words.size());
+        throw JException("BankParser_TIScaler::parse: Not enough words (%zu) for TI scaler bank", data_words.size());
     }
 
     // Parse header word
@@ -61,3 +61,4 @@ void BankParser_ITScaler::parse(std::shared_ptr<evio::BaseStructure> data_block,
     event->SetHits(event_hits);
     physics_events.push_back(event);
 }
+

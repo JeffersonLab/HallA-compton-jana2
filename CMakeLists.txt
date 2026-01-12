@@ -38,6 +38,9 @@ set(SOURCES
     JEventProcessor_Compton.cc          # Main event processor
 )
 
+# Add services
+add_subdirectory(services)
+
 # Add core parser code
 add_subdirectory(parser)
 
@@ -65,7 +68,8 @@ target_link_libraries(compton
         ROOT::Tree           # ROOT TTree functionality
         ROOT::Hist           # ROOT histogram functionality (TH1)
         ComptonDict          # ROOT dictionary 
-        ${USER_PARSER_LIBS}  # All user parser libraries (FADC, FADCScaler, ITScaler, ...)
+        services             # Service utilities
+        ${USER_PARSER_LIBS}  # All user parser libraries (FADC, FADCScaler, TIScaler, ...)
 )
 
 # Add helper scripts

@@ -135,6 +135,39 @@ You can specify a custom ROOT output filename:
 ./build/compton -PROOT_OUT_FILENAME=my_data.root <evio_file>
 ```
 
+### ROC / bank filtering
+
+You can restrict which ROC and bank IDs are decoded by providing a simple text file and enabling filtering:
+
+- `config/filter.db` – Default plain text file in the source tree used for filtering, one entry per line:
+
+```text
+# rocid  slot  model  bank
+21  3  250  250
+22  5  250  250
+```
+
+Each non-comment, non-empty line has four integers:
+- **rocid** – ROC ID
+- **slot** – Slot number (read and saved but not used yet)
+- **model** – Module model (read and saved but not used yet)
+- **bank** – Bank tag you want to decode for that ROC
+
+To customize filtering:
+
+- Edit `config/filter.db` and:
+  - Add lines for additional (rocid, bank) pairs you want to allow.
+  - Remove or comment out lines (with `#`) for combinations you want to exclude.
+- Or point to your own file with the same four-column structure.
+
+To run with filtering enabled:
+
+```bash
+./build/compton -PFILTER:ENABLE=1 -PFILTER:FILE=config/filter.db <evio_file>
+```
+
+If you leave `FILTER:ENABLE` at its default `false` value, no filtering is applied and all ROCs/banks are decoded, regardless of the contents of `config/filter.db`.
+
 ### Valgrind memory leak check
 
 This project provides a helper CMake target for running Valgrind with ROOT suppressions:
@@ -159,17 +192,18 @@ This will:
 - `JEventUnfolder_EVIO.h` – Unfolder that creates physics event-level child events from block-level events
 - `JEventProcessor_Compton.cc/.h` – Main event processor that writes data to ROOT file
 
-### Core parser area (`parser/`) – generic infrastructure
+### Core parser area (`parser/`) and services – generic infrastructure
 
-- `parser/EvioEventParser.cc/.h` – EVIO event parsing utilities (block-level to `PhysicsEvent` objects)
+- `parser/EvioEventParser.cc/.h` – EVIO event parsing utilities (block-level to `PhysicsEvent` objects, with optional filtering using `JEventService_FilterDB`)
 - `parser/BankParser.h` – Base interface for all bank parsers (hardware-agnostic)
 - `parser/data_objects/PhysicsEvent.h` – Container for physics event data including event number and hits
 - `parser/data_objects/EventHits.h` – Abstract container interface for all event hits
 - `parser/data_objects/EvioEventWrapper.h` – JANA2 object wrapper for EVIO events (allows `std::shared_ptr` to be passed through the JANA2 pipeline)
 - `parser/data_objects/TriggerData.h` – Simple POD holding trigger metadata for an EVIO block
-- `JEventService_BankParsersMap.h` – JANA service mapping bank IDs to `BankParser` implementations
+- `services/JEventService_BankParsersMap.h` – JANA service mapping bank IDs to `BankParser` implementations
+- `services/JEventService_FilterDB.h` – JANA service providing ROC/bank filters loaded from a text file (e.g. `filter.db`)
 
-This core parser area is intended to stay generic; you normally do **not** add hardware-specific code here.
+This core parser area and services layer are intended to stay generic; you normally do **not** add hardware-specific code here.
 
 ### User extension area (`user_parsers/`) – where to add your hardware code
 
@@ -184,7 +218,7 @@ adds all subdirectories and collects their libraries into `USER_PARSER_LIBS`, wh
 Other provided examples:
 
 - `user_parsers/FADCScaler/` – FADC scaler bank parser and scaler hit data objects
-- `user_parsers/ITScaler/` – IT scaler bank parser and scaler hit data objects
+- `user_parsers/TIScaler/` – TI scaler bank parser and scaler hit data objects
 
 ## Adding a new bank parser (step by step)
 
