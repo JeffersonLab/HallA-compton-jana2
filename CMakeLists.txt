@@ -69,7 +69,7 @@ target_link_libraries(compton
         ROOT::Hist           # ROOT histogram functionality (TH1)
         ComptonDict          # ROOT dictionary 
         services             # Service utilities
-        ${USER_PARSER_LIBS}  # All user parser libraries (FADC, FADCScaler, ITScaler, ...)
+        ${USER_PARSER_LIBS}  # All user parser libraries (FADC, FADCScaler, TIScaler, ...)
 )
 
 # Add helper scripts

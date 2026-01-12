@@ -13,7 +13,7 @@
 #include <JANA/JEventProcessor.h>
 #include "EventHits_FADC.h"
 #include "FADCScalerHit.h"
-#include "ITScalerHit.h"
+#include "TIScalerHit.h"
 
 /**
  * @struct WaveformTreeRow
@@ -48,7 +48,7 @@ private:
     Input<FADC250WaveformHit> m_waveform_hits_in {this}; 
     Input<FADC250PulseHit>    m_pulse_hits_in {this};
     Input<FADCScalerHit>      m_fadc_scaler_hits_in {this};
-    Input<ITScalerHit>        m_it_scaler_hits_in {this};
+    Input<TIScalerHit>        m_ti_scaler_hits_in {this};
 
     /**
      * @brief ROOT output filename parameter

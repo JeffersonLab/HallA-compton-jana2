@@ -218,7 +218,7 @@ adds all subdirectories and collects their libraries into `USER_PARSER_LIBS`, wh
 Other provided examples:
 
 - `user_parsers/FADCScaler/` – FADC scaler bank parser and scaler hit data objects
-- `user_parsers/ITScaler/` – IT scaler bank parser and scaler hit data objects
+- `user_parsers/TIScaler/` – TI scaler bank parser and scaler hit data objects
 
 ## Adding a new bank parser (step by step)
 

@@ -15,7 +15,7 @@ JEventProcessor_Compton::JEventProcessor_Compton() {
     m_fadc_scaler_hits_in.SetOptional(true);
     m_pulse_hits_in.SetOptional(true);
     m_waveform_hits_in.SetOptional(true);
-    m_it_scaler_hits_in.SetOptional(true);
+    m_ti_scaler_hits_in.SetOptional(true);
 }
 
 /**
@@ -93,15 +93,15 @@ void JEventProcessor_Compton::ProcessSequential(const JEvent &event) {
         const auto& waveform_hits      = m_waveform_hits_in();
         const auto& pulse_hits         = m_pulse_hits_in();
         const auto& fadc_scaler_hits   = m_fadc_scaler_hits_in();
-        const auto& it_scaler_hits     = m_it_scaler_hits_in();
+        const auto& ti_scaler_hits     = m_ti_scaler_hits_in();
 
         bool have_waveforms       = !waveform_hits.empty();
         bool have_pulses          = !pulse_hits.empty();
         bool have_fadc_scalers    = !fadc_scaler_hits.empty();
-        bool have_it_scalers      = !it_scaler_hits.empty();
+        bool have_ti_scalers      = !ti_scaler_hits.empty();
 
         // Only write anything if we have at least one type of hit
-        if (have_waveforms || have_pulses || have_fadc_scalers || have_it_scalers) {
+        if (have_waveforms || have_pulses || have_fadc_scalers || have_ti_scalers) {
             auto event_number = event.GetEventNumber();
 
             m_txt_output_file << "Event " << event_number << "\n";
@@ -155,12 +155,12 @@ void JEventProcessor_Compton::ProcessSequential(const JEvent &event) {
                 m_txt_output_file << "  No FADCScalerHit objects in this event\n";
             }
 
-            // IT scaler summary
-            if (have_it_scalers) {
-                m_txt_output_file << "  IT scaler hits: " << it_scaler_hits.size() << "\n";
-                for (const auto& hit : it_scaler_hits) {
+            // TI scaler summary
+            if (have_ti_scalers) {
+                m_txt_output_file << "  TI scaler hits: " << ti_scaler_hits.size() << "\n";
+                for (const auto& hit : ti_scaler_hits) {
                     m_txt_output_file
-                        << "    ITSCALER rocid=" << hit->rocid
+                        << "    TISCALER rocid=" << hit->rocid
                         << " slot=" << hit->slot
                         << " nwords=" << hit->nscalerwords
                         << " live_time=" << hit->live_time
@@ -169,7 +169,7 @@ void JEventProcessor_Compton::ProcessSequential(const JEvent &event) {
                         << "\n";
                 }
             } else {
-                m_txt_output_file << "  No ITScalerHit objects in this event\n";
+                m_txt_output_file << "  No TIScalerHit objects in this event\n";
             }
 
             m_txt_output_file << "\n";
