@@ -116,7 +116,6 @@ void EvioEventParser::parseROCBanks(const std::vector<std::shared_ptr<evio::Base
 
         // Check if ROC is allowed
         if (!filter_db_svc->isROCAllowed(db_rocid)) {
-            std::cout << "ROC " << db_rocid << " is not allowed" << std::endl;
             continue;
         }
         
@@ -127,7 +126,6 @@ void EvioEventParser::parseROCBanks(const std::vector<std::shared_ptr<evio::Base
 
             // Check if bank is allowed for this ROC
             if (!filter_db_svc->isBankAllowed(db_rocid, bank_id)) {
-                std::cout << "Bank " << bank_id << " is not allowed for ROC " << db_rocid << std::endl;
                 continue;
             }
 

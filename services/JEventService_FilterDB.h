@@ -9,16 +9,43 @@
 #include <fstream>
 #include <sstream>
 #include <iostream>
+#include <iomanip>              // I/O manipulators for formatting
 #include <algorithm>
 
 /**
  * @class JEventService_FilterDB
- * @brief JANA service providing a simple ROC/slot/model/bank allow-list from a text file
+ * @brief JANA service providing ROC/slot/model/bank allow-list filtering
+ * 
+ * This service maintains a filter database loaded from a text file that specifies
+ * which ROC IDs, slots, models, and banks are allowed for processing. When filtering
+ * is enabled, only data matching the allow-list will be processed. If filtering is
+ * disabled or no filter database is loaded, all data is allowed.
+ * 
+ * Filter file format (one entry per line):
+ *   rocid slot model bank
+ * 
+ * Example:
+ *   # rocid  slot  model  bank
+ *   21  3  250  250
+ *   22  5  250  250
  */
 class JEventService_FilterDB : public JService {
 
-    /// Map: rocid -> ("banks" | "slots" | "models") -> list of allowed values
+private:
+    /**
+     * @brief Filter database data structure
+     * 
+     * Nested map structure: rocid -> ("banks" | "slots" | "models") -> list of allowed values
+     * 
+     * Example:
+     *   data[21]["banks"] = {250, 251}
+     *   data[21]["slots"] = {3}
+     *   data[21]["models"] = {250}
+     */
     std::map<int, std::map<std::string, std::vector<int>>> data;
+
+    void printSummaryTable(std::ostream& os) const;
+    void fillDB(const std::string& filename);
 
 public:
 
@@ -40,72 +67,13 @@ public:
     Parameter<std::string> m_filter_file {this, "FILTER:FILE", "config/filter.db",
                                           "Filter DB filename with lines: 'rocid slot model bank'", true};
 
-    /// Configure and optionally load the filter DB using JANA parameters
-    void Init() override {
-        bool enable = m_filter_enable();
-        std::string filename = m_filter_file();
-        if (enable) {
-            fillDB(filename);
-        }
-    }
-
-    void fillDB(const std::string& filename) {
-        std::ifstream file(filename);
-        if (!file) {
-            throw JException("Failed to open filter DB file: " + filename);
-        }
-
-        std::string line;
-        while (std::getline(file, line)) {
-            // Skip comments and empty lines
-            if (line.empty() || line[0] == '#')
-                continue;
-            std::istringstream iss(line);
-            int rocid, slot, model, bank;
-            if (!(iss >> rocid >> slot >> model >> bank)) {
-                throw JException("Malformed line: " + line);
-            }
-
-            auto& entry = data[rocid];
-            entry["banks"].push_back(bank);
-            entry["slots"].push_back(slot);
-            entry["models"].push_back(model);
-        }
-    }
+    void Init() override;
    
-    bool isROCAllowed(int rocid) {
-        // If no entries have been loaded, treat filtering as disabled (allow all)
-        if (data.empty()) return true;
-        return data.find(rocid) != data.end();
-    }
+    bool isROCAllowed(int rocid);
 
-    bool isBankAllowed(int rocid, int bank) {
-        if (data.empty()) return true;
-        auto it_roc = data.find(rocid);
-        if (it_roc == data.end()) return false;
-        auto it_vec = it_roc->second.find("banks");
-        if (it_vec == it_roc->second.end()) return false;
-        const auto& vec = it_vec->second;
-        return std::find(vec.begin(), vec.end(), bank) != vec.end();
-    }
+    bool isBankAllowed(int rocid, int bank);
 
-    bool isSlotAllowed(int rocid, int slot) {
-        if (data.empty()) return true;
-        auto it_roc = data.find(rocid);
-        if (it_roc == data.end()) return false;
-        auto it_vec = it_roc->second.find("slots");
-        if (it_vec == it_roc->second.end()) return false;
-        const auto& vec = it_vec->second;
-        return std::find(vec.begin(), vec.end(), slot) != vec.end();
-    }
+    bool isSlotAllowed(int rocid, int slot);
 
-    bool isModelAllowed(int rocid, int model) {
-        if (data.empty()) return true;
-        auto it_roc = data.find(rocid);
-        if (it_roc == data.end()) return false;
-        auto it_vec = it_roc->second.find("models");
-        if (it_vec == it_roc->second.end()) return false;
-        const auto& vec = it_vec->second;
-        return std::find(vec.begin(), vec.end(), model) != vec.end();
-    }
+    bool isModelAllowed(int rocid, int model);
 };
