@@ -114,6 +114,7 @@ void JEventProcessor_Compton::ProcessSequential(const JEvent &event) {
         m_pulse_integral_hist->Fill(pulse_hit->integral_sum);
     }
 
+    heldec = {};
     // Helicity decoder data
     for(const auto& heldec_hit : m_heldec_data_in()){
 	heldec.helicity_seed          = heldec_hit->helicity_seed;
@@ -136,9 +137,8 @@ void JEventProcessor_Compton::ProcessSequential(const JEvent &event) {
         heldec.last32wins_pairsync    = heldec_hit->last32wins_pairsync;
         heldec.last32wins_helicity    = heldec_hit->last32wins_helicity;
         heldec.last32wins_pattsync_hel= heldec_hit->last32wins_pattsync_hel;
-	printf("Event number %d trigger number %d %d %d %d\n",event.GetEventNumber(),heldec_hit->trigger_num,heldec.trig_helicity,heldec.n_pairsync,heldec.n_pattsync);
+        m_tree->Fill();
     }
-    m_tree->Fill();
 
     // ------------------------------------------------------------------
     // Optional text dump of hits for this event (waveforms, pulses, scalers)
