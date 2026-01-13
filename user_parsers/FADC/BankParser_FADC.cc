@@ -78,7 +78,7 @@ void BankParser_FADC::parse(std::shared_ptr<evio::BaseStructure> data_block,
                         eh_slot, block_slot
                     );
                 }
-                trigger_num = getBitsInRange(d, 21, 0); // should be 11-0 instead
+                trigger_num = getBitsInRange(d, 11, 0); 
                 // Initialize new FADC-specific hits container for this event
                 event_hits = std::make_shared<EventHits_FADC>();
             } else if (data_type == 3) { // Trigger time

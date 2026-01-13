@@ -16,6 +16,7 @@ JEventProcessor_Compton::JEventProcessor_Compton() {
     m_pulse_hits_in.SetOptional(true);
     m_waveform_hits_in.SetOptional(true);
     m_ti_scaler_hits_in.SetOptional(true);
+    m_heldec_data_in.SetOptional(true);
 }
 
 /**
@@ -41,6 +42,33 @@ void JEventProcessor_Compton::Init() {
     m_waveform_tree->Branch("slot", &ev_slot);
     m_waveform_tree->Branch("chan", &ev_chan);
     m_waveform_tree->Branch("waveform", &ev_waveform);
+
+    // Create the Helicity Decoder Tree
+    m_tree = new TTree("m_tree", "Physics Event Tree");
+    m_tree->Branch(
+        "heldec",
+        &heldec,
+        "helicity_seed/i:"
+        "n_tstable_fall/i:"
+        "n_tstable_rise/i:"
+        "n_pattsync/i:"
+        "n_pairsync/i:"
+        "time_tstable_start/i:"
+        "time_tstable_end/i:"
+        "last_tstable_duration/i:"
+        "last_tsettle_duration/i:"
+        "trig_tstable/i:"
+        "trig_pattsync/i:"
+        "trig_pairsync/i:"
+        "trig_helicity/i:"
+        "trig_pat0_helicity/i:"
+        "trig_polarity/i:"
+        "trig_pat_count/i:"
+        "last32wins_pattsync/i:"
+        "last32wins_pairsync/i:"
+        "last32wins_helicity/i:"
+        "last32wins_pattsync_hel/i"
+    );
 
     // Optionally: Text output file for human-readable hit summaries
     m_txt_output_file.open(m_txt_output_filename().c_str());
@@ -85,6 +113,32 @@ void JEventProcessor_Compton::ProcessSequential(const JEvent &event) {
         // Fill histogram with pulse integral values
         m_pulse_integral_hist->Fill(pulse_hit->integral_sum);
     }
+
+    // Helicity decoder data
+    for(const auto& heldec_hit : m_heldec_data_in()){
+	heldec.helicity_seed          = heldec_hit->helicity_seed;
+        heldec.n_tstable_fall         = heldec_hit->n_tstable_fall;
+        heldec.n_tstable_rise         = heldec_hit->n_tstable_rise;
+        heldec.n_pattsync             = heldec_hit->n_pattsync;
+        heldec.n_pairsync             = heldec_hit->n_pairsync;
+        heldec.time_tstable_start     = heldec_hit->time_tstable_start;
+        heldec.time_tstable_end       = heldec_hit->time_tstable_end;
+        heldec.last_tstable_duration  = heldec_hit->last_tstable_duration;
+        heldec.last_tsettle_duration  = heldec_hit->last_tsettle_duration;
+        heldec.trig_tstable           = heldec_hit->trig_tstable;
+        heldec.trig_pattsync          = heldec_hit->trig_pattsync;
+        heldec.trig_pairsync          = heldec_hit->trig_pairsync;
+        heldec.trig_helicity          = heldec_hit->trig_helicity;
+        heldec.trig_pat0_helicity     = heldec_hit->trig_pat0_helicity;
+        heldec.trig_polarity          = heldec_hit->trig_polarity;
+        heldec.trig_pat_count         = heldec_hit->trig_pat_count;
+        heldec.last32wins_pattsync    = heldec_hit->last32wins_pattsync;
+        heldec.last32wins_pairsync    = heldec_hit->last32wins_pairsync;
+        heldec.last32wins_helicity    = heldec_hit->last32wins_helicity;
+        heldec.last32wins_pattsync_hel= heldec_hit->last32wins_pattsync_hel;
+	printf("Event number %d trigger number %d %d %d %d\n",event.GetEventNumber(),heldec_hit->trigger_num,heldec.trig_helicity,heldec.n_pairsync,heldec.n_pattsync);
+    }
+    m_tree->Fill();
 
     // ------------------------------------------------------------------
     // Optional text dump of hits for this event (waveforms, pulses, scalers)
@@ -190,6 +244,7 @@ void JEventProcessor_Compton::Finish() {
     if (m_root_output_file) {
         m_waveform_tree->Write();        // Save waveform tree to file
         m_pulse_integral_hist->Write();  // Save integral histogram to file
+	m_tree->Write();
         m_root_output_file->Close();     // Close ROOT file
         delete m_root_output_file;       // Free memory
         m_root_output_file = nullptr;

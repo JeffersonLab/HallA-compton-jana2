@@ -6,6 +6,7 @@
 add_subdirectory(FADC)
 add_subdirectory(FADCScaler)
 add_subdirectory(TIScaler)
+add_subdirectory(helicity_decoder)
 
 # Collect all user parser libraries in a single variable that the top-level
 # CMakeLists.txt can link against. When adding a new parser library, extend
@@ -14,6 +15,7 @@ set(USER_PARSER_LIBS
     fadc_parsers
     fadc_scaler_parsers
     tiscaler_parsers
+    helicity_decoder_parsers
     PARENT_SCOPE
 )
 
