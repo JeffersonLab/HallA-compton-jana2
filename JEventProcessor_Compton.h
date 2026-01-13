@@ -14,6 +14,7 @@
 #include "EventHits_FADC.h"
 #include "FADCScalerHit.h"
 #include "TIScalerHit.h"
+#include "HelicityDecoderData.h"
 
 /**
  * @struct WaveformTreeRow
@@ -28,6 +29,29 @@ struct WaveformTreeRow {
     uint32_t slot;
     uint32_t chan;
     std::vector<uint32_t> waveform;
+};
+
+struct HelDec_t {
+    uint32_t helicity_seed;
+    uint32_t n_tstable_fall;
+    uint32_t n_tstable_rise;
+    uint32_t n_pattsync;
+    uint32_t n_pairsync;
+    uint32_t time_tstable_start;
+    uint32_t time_tstable_end;
+    uint32_t last_tstable_duration;
+    uint32_t last_tsettle_duration;
+    uint32_t trig_tstable;
+    uint32_t trig_pattsync;
+    uint32_t trig_pairsync;
+    uint32_t trig_helicity;
+    uint32_t trig_pat0_helicity;
+    uint32_t trig_polarity;
+    uint32_t trig_pat_count;
+    uint32_t last32wins_pattsync;
+    uint32_t last32wins_pairsync;
+    uint32_t last32wins_helicity;
+    uint32_t last32wins_pattsync_hel;
 };
 
 /**
@@ -49,6 +73,7 @@ private:
     Input<FADC250PulseHit>    m_pulse_hits_in {this};
     Input<FADCScalerHit>      m_fadc_scaler_hits_in {this};
     Input<TIScalerHit>        m_ti_scaler_hits_in {this};
+    Input<HelicityDecoderData>  m_heldec_data_in {this};
 
     /**
      * @brief ROOT output filename parameter
@@ -77,6 +102,8 @@ private:
     std::vector<uint32_t> ev_chan;
     std::vector<uint32_t> ev_waveform;
 
+    // helicity decoder tree variables
+    HelDec_t heldec{};
 
     // ROOT output objects
     TFile *m_root_output_file;                ///< ROOT file for histogram and tree storage

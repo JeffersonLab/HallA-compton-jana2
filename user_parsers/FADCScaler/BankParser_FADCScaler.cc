@@ -21,7 +21,6 @@ void BankParser_FADCScaler::parse(std::shared_ptr<evio::BaseStructure> data_bloc
 
     // There will be only one PhysicsEvent per block for this scaler bank
     PhysicsEvent* event = new PhysicsEvent();
-    event->SetEventNumber(static_cast<int>(trigger_data.first_event_number));
 
     auto event_hits = std::make_shared<EventHits_FADCScaler>();
 
@@ -44,6 +43,14 @@ void BankParser_FADCScaler::parse(std::shared_ptr<evio::BaseStructure> data_bloc
         }
         event_hits->scalers.push_back(hit);
     }
+
+    uint64_t tmp_evtnumber = 0;
+
+    tmp_evtnumber =
+    static_cast<uint64_t>(data_words[data_words.size() - 1]) |
+    (static_cast<uint64_t>(data_words[data_words.size() - 2]) << 32);
+
+    event->SetEventNumber(tmp_evtnumber);
 
     event->SetHits(event_hits);
     physics_events.push_back(event);
