@@ -13,7 +13,7 @@
 #include <JANA/JEventProcessor.h>
 #include "EventHits_FADC.h"
 #include "FADCScalerHit.h"
-#include "TIScalerHit.h"
+#include "ITScalerHit.h"
 
 /**
  * @struct WaveformTreeRow
@@ -29,6 +29,7 @@ struct WaveformTreeRow {
     uint32_t chan;
     std::vector<uint32_t> waveform;
 };
+
 
 /**
  * @class JEventProcessor_Compton
@@ -48,7 +49,7 @@ private:
     Input<FADC250WaveformHit> m_waveform_hits_in {this}; 
     Input<FADC250PulseHit>    m_pulse_hits_in {this};
     Input<FADCScalerHit>      m_fadc_scaler_hits_in {this};
-    Input<TIScalerHit>        m_ti_scaler_hits_in {this};
+    Input<ITScalerHit>        m_it_scaler_hits_in {this};
 
     /**
      * @brief ROOT output filename parameter
@@ -76,6 +77,20 @@ private:
     std::vector<uint32_t> ev_slot;
     std::vector<uint32_t> ev_chan;
     std::vector<uint32_t> ev_waveform;
+    uint32_t integral_sum;
+    uint32_t coarse_time;
+    uint32_t fine_time;
+    uint32_t pulse_peak;
+    uint32_t pedestal_sum;
+    uint32_t pedestal_quality;
+    int number_hit;
+    std::vector<uint32_t> ev_integral_sum;
+    std::vector<uint32_t> ev_coarse_time;
+    std::vector<uint32_t> ev_fine_time;
+    std::vector<uint32_t> ev_pulse_peak;
+    std::vector<uint32_t> ev_pulse_slot;
+    std::vector<uint32_t> ev_pulse_chan;
+
 
 
     // ROOT output objects
@@ -84,6 +99,9 @@ private:
     TTree *m_waveform_tree;                   ///< ROOT tree for waveform data
     TTree *m_tree;                            ///< ROOT tree for physics event
     TH1I *m_pulse_integral_hist;              ///< Histogram of pulse integral sums
+
+    TTree *m_pulse_tree;                      ///< ROOT tree for pulse hit
+
 
     // Text output for human-readable dump of hits per event
     std::ofstream m_txt_output_file;
