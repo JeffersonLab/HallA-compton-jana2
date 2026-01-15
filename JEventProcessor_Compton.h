@@ -101,6 +101,19 @@ private:
     std::vector<uint32_t> ev_slot;
     std::vector<uint32_t> ev_chan;
     std::vector<uint32_t> ev_waveform;
+    uint32_t integral_sum;
+    uint32_t coarse_time;
+    uint32_t fine_time;
+    uint32_t pulse_peak;
+    uint32_t pedestal_sum;
+    uint32_t pedestal_quality;
+    int number_hit;
+    std::vector<uint32_t> ev_integral_sum;
+    std::vector<uint32_t> ev_coarse_time;
+    std::vector<uint32_t> ev_fine_time;
+    std::vector<uint32_t> ev_pulse_peak;
+    std::vector<uint32_t> ev_pulse_slot;
+    std::vector<uint32_t> ev_pulse_chan;
 
     // helicity decoder tree variables
     HelDec_t heldec{};
@@ -111,7 +124,8 @@ private:
     TTree *m_waveform_tree;                   ///< ROOT tree for waveform data
     TTree *m_tree;                            ///< ROOT tree for physics event
     TH1I *m_pulse_integral_hist;              ///< Histogram of pulse integral sums
-
+    TTree *m_pulse_tree;                      ///< ROOT tree for pulse hit
+    
     // Text output for human-readable dump of hits per event
     std::ofstream m_txt_output_file;
 

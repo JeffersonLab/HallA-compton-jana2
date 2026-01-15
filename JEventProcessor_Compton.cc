@@ -43,6 +43,18 @@ void JEventProcessor_Compton::Init() {
     m_waveform_tree->Branch("chan", &ev_chan);
     m_waveform_tree->Branch("waveform", &ev_waveform);
 
+    // Create ROOT tree for pulse data
+    m_pulse_tree = new TTree("pulse_tree","FADC250 pulse data(slow, channel, integral, time)");
+    m_pulse_tree->Branch("integral_sum", &ev_integral_sum);
+    m_pulse_tree->Branch("pedestal_sum", &pedestal_sum);
+    m_pulse_tree->Branch("coarse_time",&ev_coarse_time);
+    m_pulse_tree->Branch("fine_time",&ev_fine_time);
+    m_pulse_tree->Branch("pulse_peak",&ev_pulse_peak);
+    m_pulse_tree->Branch("pedestal_quality",&pedestal_quality);
+    m_pulse_tree->Branch("nhits",&number_hit);
+    m_pulse_tree->Branch("chan",&ev_pulse_chan);
+    m_pulse_tree->Branch("slot",&ev_pulse_slot);
+
     // Create the Helicity Decoder Tree
     m_tree = new TTree("m_tree", "Physics Event Tree");
     m_tree->Branch(
@@ -88,10 +100,20 @@ void JEventProcessor_Compton::Init() {
  * @param event Reference to the JANA2 event to process
  */
 void JEventProcessor_Compton::ProcessSequential(const JEvent &event) {
-   
+    
+    // Clear previous event data
     ev_slot.clear();
     ev_chan.clear();
     ev_waveform.clear();
+    ev_coarse_time.clear();
+    ev_pulse_chan.clear();
+    ev_pulse_slot.clear();
+    ev_fine_time.clear();
+    ev_integral_sum.clear();
+    ev_pulse_peak.clear();
+    pedestal_sum= 0;
+    pedestal_quality = 0;
+    number_hit =0;
 
     // FADC250 waveform hits
     for (const auto& waveform_hit : m_waveform_hits_in()) {
@@ -106,7 +128,35 @@ void JEventProcessor_Compton::ProcessSequential(const JEvent &event) {
 	ev_chan.insert(ev_chan.end(), waveform_sample_number, m_waveform_tree_row.chan);
 	ev_waveform.insert(ev_waveform.end(),  m_waveform_tree_row.waveform.begin(), m_waveform_tree_row.waveform.end());
     }
+
+    // FADC250 pulse hits
+ 
+    int nn=0;
+    for (const auto& pulse_hit : m_pulse_hits_in()){
+        integral_sum = pulse_hit->integral_sum;
+        pedestal_sum = pulse_hit->pedestal_sum;
+        coarse_time = pulse_hit->coarse_time;
+        fine_time = pulse_hit->fine_time;
+        pulse_peak = pulse_hit->pulse_peak;
+        pedestal_quality = pulse_hit->pedestal_quality;
+        if(integral_sum!=0){
+            nn++;
+            ev_integral_sum.push_back(integral_sum);
+            ev_coarse_time.push_back(coarse_time);
+            ev_fine_time.push_back(fine_time);
+            ev_pulse_peak.push_back(pulse_peak);
+            ev_pulse_slot.push_back(pulse_hit->slot);
+            ev_pulse_chan.push_back(pulse_hit->chan);
+        }
+       
+        
+    }
+    number_hit = nn;
     m_waveform_tree->Fill();
+    if(nn>0){
+        m_pulse_tree->Fill();
+    }
+
 
     // FADC250 pulse hits
     for (const auto& pulse_hit : m_pulse_hits_in()) {
@@ -244,7 +294,8 @@ void JEventProcessor_Compton::Finish() {
     if (m_root_output_file) {
         m_waveform_tree->Write();        // Save waveform tree to file
         m_pulse_integral_hist->Write();  // Save integral histogram to file
-	m_tree->Write();
+	    m_tree->Write();
+        m_pulse_tree->Write();           // Save pulse tree to file
         m_root_output_file->Close();     // Close ROOT file
         delete m_root_output_file;       // Free memory
         m_root_output_file = nullptr;
