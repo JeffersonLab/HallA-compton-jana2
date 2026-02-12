@@ -20,10 +20,10 @@ void EvioEventParser::parse(const JEvent& event, std::vector<PhysicsEvent*>& phy
     // Get all child structures (Trigger Bank + ROC Banks)
     auto evio_data_block = event.Get<EvioEventWrapper>().at(0)->evio_event;
     auto& children = evio_data_block->getChildren();
-    
+
     // Parse the trigger bank to extract ROC segments and event number
     TriggerData trigger_data(0);
-    auto trigger_bank_roc_segments = parseTriggerBank(children[0], trigger_data);
+    auto trigger_bank_roc_segments = parseTriggerBank(children.at(0), trigger_data);
     
     // Parse the data banks while using the trigger bank ROC segments for validation
     std::vector<std::shared_ptr<evio::BaseStructure>> roc_banks(children.begin() + 1, children.end());

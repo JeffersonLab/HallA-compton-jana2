@@ -84,6 +84,11 @@ JEventSource::Result JEventSource_EVIO::Emit(JEvent& event) {
         return Result::FailureTryAgain;
     }
 
+    // Check if this is a physics event or not. If not, skip it.
+    if (!isPhysicsEvent(evio_event)) {
+        return Result::FailureTryAgain;
+    }
+
     // Check if this is a run control event. Apart from extracting the run number,
     // these events are not useful for further processing, so get run number and skip.
     if (isRunControlEvent(evio_event, m_run_number)) {
@@ -126,6 +131,29 @@ void JEventSource_EVIO::ProcessParallel(JEvent& event) const {
     // event-specific data (TriggerData, PhysicsEvent pointers) is local.
     m_evio_event_parser->parse(event, physics_events);
     event.Insert(physics_events);
+}
+
+
+
+/**
+ * @brief Identifies physics events by their EVIO tag
+ *
+ * Physics events are identified by tags 0xFF50 and 0xFF58.
+ *
+ * @param event       EVIO event to examine
+ * @return true if this was a physics event (tag 0xFF50 or 0xFF58), false otherwise
+ */
+bool JEventSource_EVIO::isPhysicsEvent(std::shared_ptr<evio::EvioEvent> event) {
+    std::shared_ptr<evio::BaseStructureHeader> header = event->getHeader();
+    uint16_t tag = header->getTag();
+    if (event->getEventNumber() == 31524) {
+        std::cout << "Physics event: " << event->getEventNumber() << std::endl;
+    }
+    if (tag == 0xFF50 || tag == 0xFF58) {
+        return true;
+    }
+    
+    return false; 
 }
 
 /**

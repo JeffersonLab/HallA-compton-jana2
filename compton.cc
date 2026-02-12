@@ -21,7 +21,8 @@
 #include "BankParser_FADCScaler.h"          // FADC scaler bank parser implementation
 #include "BankParser_TIScaler.h"            // TI scaler bank parser implementation
 #include "BankParser_HelicityDecoder.h"     // Helicity decoder bank parser implementation
-
+#include "BankParser_MPD.h"                 // MPD bank parser implementation
+#include "EventHits_MPD.h"                 // MPD event hits container
 /**
  * @brief Main function for experiment data processing application
  * 
@@ -72,7 +73,7 @@ int main(int argc, char* argv[]) {
     bank_parsers_svc->addParser(9250, new BankParser_FADCScaler());
     bank_parsers_svc->addParser(9001, new BankParser_TIScaler());
     bank_parsers_svc->addParser(0xdec, new BankParser_HelicityDecoder());
-
+    bank_parsers_svc->addParser(10, new BankParser_MPD());
     // Run the application
     app.Run();
 

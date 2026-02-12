@@ -17,6 +17,7 @@ JEventProcessor_Compton::JEventProcessor_Compton() {
     m_waveform_hits_in.SetOptional(true);
     m_ti_scaler_hits_in.SetOptional(true);
     m_heldec_data_in.SetOptional(true);
+    m_mpd_hits_in.SetOptional(true);
 }
 
 /**
@@ -198,14 +199,15 @@ void JEventProcessor_Compton::ProcessSequential(const JEvent &event) {
         const auto& pulse_hits         = m_pulse_hits_in();
         const auto& fadc_scaler_hits   = m_fadc_scaler_hits_in();
         const auto& ti_scaler_hits     = m_ti_scaler_hits_in();
+        const auto& mpd_hits           = m_mpd_hits_in();
 
         bool have_waveforms       = !waveform_hits.empty();
         bool have_pulses          = !pulse_hits.empty();
         bool have_fadc_scalers    = !fadc_scaler_hits.empty();
         bool have_ti_scalers      = !ti_scaler_hits.empty();
-
+        bool have_mpd_hits        = !mpd_hits.empty(); 
         // Only write anything if we have at least one type of hit
-        if (have_waveforms || have_pulses || have_fadc_scalers || have_ti_scalers) {
+        if (have_waveforms || have_pulses || have_fadc_scalers || have_ti_scalers || have_mpd_hits) {
             auto event_number = event.GetEventNumber();
 
             m_txt_output_file << "Event " << event_number << "\n";
@@ -274,6 +276,30 @@ void JEventProcessor_Compton::ProcessSequential(const JEvent &event) {
                 }
             } else {
                 m_txt_output_file << "  No TIScalerHit objects in this event\n";
+            }
+
+            // MPD hit summary
+            if (have_mpd_hits) {
+                m_txt_output_file << "  MPD hits: " << mpd_hits.size() << "\n";
+                for (const auto& hit : mpd_hits) {
+                    m_txt_output_file
+                        << "    MPD rocid=" << hit->rocid
+                        << " slot=" << hit->slot
+                        << " trigger_num=" << hit->trigger_num
+                        << " trigger_time=" << hit->trigger_time
+                        << " mpd_id=" << (int)hit->mpd_id
+                        << " fiber_id=" << (int)hit->fiber_id
+                        << " apv_channel=" << (int)hit->apv_channel
+                        << " apv_id=" << (int)hit->apv_id
+                        << " apv_samples=[";
+                    for (int i = 0; i < 6; ++i) {
+                        m_txt_output_file << hit->apv_samples[i];
+                        if (i < 5) m_txt_output_file << ",";
+                    }
+                    m_txt_output_file << "]\n";
+                }
+            } else {
+                m_txt_output_file << "  No MPDHit objects in this event\n";
             }
 
             m_txt_output_file << "\n";
