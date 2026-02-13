@@ -52,6 +52,6 @@ void BankParser_FADCScaler::parse(std::shared_ptr<evio::BaseStructure> data_bloc
 
     event->SetEventNumber(tmp_evtnumber);
 
-    event->SetHits(event_hits);
+    event->addHits(event_hits);
     physics_events.push_back(event);
 }
