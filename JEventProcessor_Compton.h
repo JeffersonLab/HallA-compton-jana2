@@ -16,6 +16,7 @@
 #include "TIScalerHit.h"
 #include "HelicityDecoderData.h"
 #include "MPDHit.h"
+#include "VFTDCHit.h"
 
 /**
  * @struct WaveformTreeRow
@@ -76,6 +77,7 @@ private:
     Input<TIScalerHit>        m_ti_scaler_hits_in {this};
     Input<HelicityDecoderData>  m_heldec_data_in {this};
     Input<MPDHit>             m_mpd_hits_in {this};
+    Input<VFTDCHit>           m_vftdc_hits_in {this};
 
     /**
      * @brief ROOT output filename parameter

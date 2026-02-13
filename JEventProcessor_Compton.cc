@@ -18,6 +18,7 @@ JEventProcessor_Compton::JEventProcessor_Compton() {
     m_ti_scaler_hits_in.SetOptional(true);
     m_heldec_data_in.SetOptional(true);
     m_mpd_hits_in.SetOptional(true);
+    m_vftdc_hits_in.SetOptional(true);
 }
 
 /**
@@ -200,14 +201,16 @@ void JEventProcessor_Compton::ProcessSequential(const JEvent &event) {
         const auto& fadc_scaler_hits   = m_fadc_scaler_hits_in();
         const auto& ti_scaler_hits     = m_ti_scaler_hits_in();
         const auto& mpd_hits           = m_mpd_hits_in();
+        const auto& vftdc_hits         = m_vftdc_hits_in();
 
         bool have_waveforms       = !waveform_hits.empty();
         bool have_pulses          = !pulse_hits.empty();
         bool have_fadc_scalers    = !fadc_scaler_hits.empty();
         bool have_ti_scalers      = !ti_scaler_hits.empty();
-        bool have_mpd_hits        = !mpd_hits.empty(); 
+        bool have_mpd_hits        = !mpd_hits.empty();
+        bool have_vftdc_hits      = !vftdc_hits.empty();
         // Only write anything if we have at least one type of hit
-        if (have_waveforms || have_pulses || have_fadc_scalers || have_ti_scalers || have_mpd_hits) {
+        if (have_waveforms || have_pulses || have_fadc_scalers || have_ti_scalers || have_mpd_hits || have_vftdc_hits) {
             auto event_number = event.GetEventNumber();
 
             m_txt_output_file << "Event " << event_number << "\n";
@@ -300,6 +303,27 @@ void JEventProcessor_Compton::ProcessSequential(const JEvent &event) {
                 }
             } else {
                 m_txt_output_file << "  No MPDHit objects in this event\n";
+            }
+
+            // VFTDC hit summary
+            if (have_vftdc_hits) {
+                m_txt_output_file << "  VFTDC hits: " << vftdc_hits.size() << "\n";
+                for (const auto& hit : vftdc_hits) {
+                    m_txt_output_file
+                        << "    VFTDC rocid=" << hit->rocid
+                        << " slot=" << hit->slot
+                        << " board_id=" << hit->board_id
+                        << " timestamp=" << hit->timestamp
+                        << " group_num=" << hit->group_num
+                        << " channel_num=" << hit->channel_num
+                        << " edge_type=" << hit->edge_type
+                        << " coarse_time=" << hit->coarse_time
+                        << " fine_time=" << hit->fine_time
+                        << " two_ns=" << hit->two_ns
+                        << "\n";
+                }
+            } else {
+                m_txt_output_file << "  No VFTDCHit objects in this event\n";
             }
 
             m_txt_output_file << "\n";
