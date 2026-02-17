@@ -58,7 +58,7 @@ void BankParser_TIScaler::parse(std::shared_ptr<evio::BaseStructure> data_block,
     uint64_t event_number = (static_cast<uint64_t>(data_words[10]) << 16)
                           | static_cast<uint64_t>(data_words[11]);
     event->SetEventNumber(static_cast<int>(event_number));
-    event->SetHits(event_hits);
+    event->addHits(event_hits);
     physics_events.push_back(event);
 }
 

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <map>
 
 #include <JANA/JException.h>
 
@@ -20,14 +21,38 @@ void EvioEventParser::parse(const JEvent& event, std::vector<PhysicsEvent*>& phy
     // Get all child structures (Trigger Bank + ROC Banks)
     auto evio_data_block = event.Get<EvioEventWrapper>().at(0)->evio_event;
     auto& children = evio_data_block->getChildren();
-    
+
     // Parse the trigger bank to extract ROC segments and event number
     TriggerData trigger_data(0);
-    auto trigger_bank_roc_segments = parseTriggerBank(children[0], trigger_data);
+    auto trigger_bank_roc_segments = parseTriggerBank(children.at(0), trigger_data);
     
     // Parse the data banks while using the trigger bank ROC segments for validation
     std::vector<std::shared_ptr<evio::BaseStructure>> roc_banks(children.begin() + 1, children.end());
     parseROCBanks(roc_banks, trigger_bank_roc_segments, trigger_data, physics_events);
+
+    if (physics_events.empty()) {
+        throw JException("EvioEventParser::parse: No physics events found for evio block %d", evio_data_block->getEventNumber());
+    }
+
+    // Consolidate PhysicsEvents that share the same event number.
+    // Different bank parsers (FADC, Scaler, TI Scaler, VFTDC, MPD, etc.) each
+    // create their own PhysicsEvent objects.  Events with the same number are
+    // merged here so that a single PhysicsEvent carries hits from all subsystems.
+    std::map<int, PhysicsEvent*> event_map;
+    for (auto* pe : physics_events) {
+        auto it = event_map.find(pe->GetEventNumber());
+        if (it != event_map.end()) {
+            // Same event number already seen — move hits into the existing PhysicsEvent
+            pe->insertHitsInto(*it->second);
+            delete pe;
+        } else {
+            event_map[pe->GetEventNumber()] = pe;
+        }
+    }
+    physics_events.clear();
+    for (auto& [num, pe] : event_map) {
+        physics_events.push_back(pe);
+    }
 }
 
 /**

@@ -16,7 +16,6 @@ find_package(evio REQUIRED)
 # Find ROOT
 # ROOT provides TFile, TTree, and histogram functionality
 find_package(ROOT REQUIRED COMPONENTS Core RIO Tree Hist)
-include(${ROOT_USE_FILE})
 
 #---------------------------------------------------------------
 # Generate ROOT dictionary for std::vector<std::vector<unsigned int>>
@@ -57,6 +56,9 @@ target_include_directories(compton
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}           # Main source directory
 )
+
+# Link Root Components
+target_link_libraries(compton PRIVATE ROOT::Core ROOT::RIO ROOT::Tree ROOT::Hist)
 
 # Link required libraries to the executable
 target_link_libraries(compton

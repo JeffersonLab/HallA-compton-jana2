@@ -42,6 +42,14 @@ private:
      */
     static bool isRunControlEvent(std::shared_ptr<evio::EvioEvent> event, int& run_number);
 
+    /**
+     * @brief Identifies physics events by their EVIO tag
+     *
+     * @param event  EVIO event to examine
+     * @return true if this was a physics event (tag 0xFF50 or 0xFF58), false otherwise
+     */
+    static bool isPhysicsEvent(std::shared_ptr<evio::EvioEvent> event);
+
 public:
     JEventSource_EVIO();
     virtual ~JEventSource_EVIO() = default;
