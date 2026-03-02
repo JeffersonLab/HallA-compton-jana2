@@ -17,6 +17,9 @@
 #include "HelicityDecoderData.h"
 #include "MPDHit.h"
 #include "VFTDCHit.h"
+#include "FADC250HallBPulseIntegralHit.h"
+#include "FADC250HallBPulseTimeHit.h"
+#include "FADC250HallBPulsePeakHit.h"
 
 /**
  * @struct WaveformTreeRow
@@ -71,13 +74,16 @@ class JEventProcessor_Compton : public JEventProcessor {
 
 private:
     // Declare Inputs
-    Input<FADC250WaveformHit> m_waveform_hits_in {this}; 
-    Input<FADC250PulseHit>    m_pulse_hits_in {this};
-    Input<FADCScalerHit>      m_fadc_scaler_hits_in {this};
-    Input<TIScalerHit>        m_ti_scaler_hits_in {this};
-    Input<HelicityDecoderData>  m_heldec_data_in {this};
-    Input<MPDHit>             m_mpd_hits_in {this};
-    Input<VFTDCHit>           m_vftdc_hits_in {this};
+    Input<FADC250WaveformHit>          m_waveform_hits_in {this}; 
+    Input<FADC250PulseHit>             m_pulse_hits_in {this};
+    Input<FADCScalerHit>               m_fadc_scaler_hits_in {this};
+    Input<TIScalerHit>                 m_ti_scaler_hits_in {this};
+    Input<HelicityDecoderData>         m_heldec_data_in {this};
+    Input<MPDHit>                      m_mpd_hits_in {this};
+    Input<VFTDCHit>                    m_vftdc_hits_in {this};
+    Input<FADC250HallBPulseIntegralHit> m_hallb_pulse_integral_hits_in {this};
+    Input<FADC250HallBPulseTimeHit>    m_hallb_pulse_time_hits_in {this};
+    Input<FADC250HallBPulsePeakHit>    m_hallb_pulse_peak_hits_in {this};
 
     /**
      * @brief ROOT output filename parameter

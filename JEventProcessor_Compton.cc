@@ -19,6 +19,9 @@ JEventProcessor_Compton::JEventProcessor_Compton() {
     m_heldec_data_in.SetOptional(true);
     m_mpd_hits_in.SetOptional(true);
     m_vftdc_hits_in.SetOptional(true);
+    m_hallb_pulse_integral_hits_in.SetOptional(true);
+    m_hallb_pulse_time_hits_in.SetOptional(true);
+    m_hallb_pulse_peak_hits_in.SetOptional(true);
 }
 
 /**
@@ -196,21 +199,28 @@ void JEventProcessor_Compton::ProcessSequential(const JEvent &event) {
     // Optional text dump of hits for this event (waveforms, pulses, scalers)
     // ------------------------------------------------------------------
     if (m_txt_output_file.is_open()) {
-        const auto& waveform_hits      = m_waveform_hits_in();
-        const auto& pulse_hits         = m_pulse_hits_in();
-        const auto& fadc_scaler_hits   = m_fadc_scaler_hits_in();
-        const auto& ti_scaler_hits     = m_ti_scaler_hits_in();
-        const auto& mpd_hits           = m_mpd_hits_in();
-        const auto& vftdc_hits         = m_vftdc_hits_in();
+        const auto& waveform_hits            = m_waveform_hits_in();
+        const auto& pulse_hits               = m_pulse_hits_in();
+        const auto& fadc_scaler_hits         = m_fadc_scaler_hits_in();
+        const auto& ti_scaler_hits           = m_ti_scaler_hits_in();
+        const auto& mpd_hits                 = m_mpd_hits_in();
+        const auto& vftdc_hits               = m_vftdc_hits_in();
+        const auto& hallb_pulse_integral_hits = m_hallb_pulse_integral_hits_in();
+        const auto& hallb_pulse_time_hits    = m_hallb_pulse_time_hits_in();
+        const auto& hallb_pulse_peak_hits    = m_hallb_pulse_peak_hits_in();
 
-        bool have_waveforms       = !waveform_hits.empty();
-        bool have_pulses          = !pulse_hits.empty();
-        bool have_fadc_scalers    = !fadc_scaler_hits.empty();
-        bool have_ti_scalers      = !ti_scaler_hits.empty();
-        bool have_mpd_hits        = !mpd_hits.empty();
-        bool have_vftdc_hits      = !vftdc_hits.empty();
+        bool have_waveforms              = !waveform_hits.empty();
+        bool have_pulses                 = !pulse_hits.empty();
+        bool have_fadc_scalers           = !fadc_scaler_hits.empty();
+        bool have_ti_scalers             = !ti_scaler_hits.empty();
+        bool have_mpd_hits               = !mpd_hits.empty();
+        bool have_vftdc_hits             = !vftdc_hits.empty();
+        bool have_hallb_pulse_integrals  = !hallb_pulse_integral_hits.empty();
+        bool have_hallb_pulse_times      = !hallb_pulse_time_hits.empty();
+        bool have_hallb_pulse_peaks      = !hallb_pulse_peak_hits.empty();
         // Only write anything if we have at least one type of hit
-        if (have_waveforms || have_pulses || have_fadc_scalers || have_ti_scalers || have_mpd_hits || have_vftdc_hits) {
+        if (have_waveforms || have_pulses || have_fadc_scalers || have_ti_scalers || have_mpd_hits || have_vftdc_hits
+            || have_hallb_pulse_integrals || have_hallb_pulse_times || have_hallb_pulse_peaks) {
             auto event_number = event.GetEventNumber();
 
             m_txt_output_file << "Event " << event_number << "\n";
@@ -324,6 +334,54 @@ void JEventProcessor_Compton::ProcessSequential(const JEvent &event) {
                 }
             } else {
                 m_txt_output_file << "  No VFTDCHit objects in this event\n";
+            }
+
+            // HallB pulse integral summary
+            if (have_hallb_pulse_integrals) {
+                m_txt_output_file << "  HallB pulse integral hits: " << hallb_pulse_integral_hits.size() << "\n";
+                for (const auto& hit : hallb_pulse_integral_hits) {
+                    m_txt_output_file
+                        << "    HALLB_INTEGRAL slot=" << hit->slot
+                        << " chan=" << hit->chan
+                        << " pulse_number=" << hit->pulse_number
+                        << " pulse_integral=" << hit->pulse_integral
+                        << "\n";
+                }
+            } else {
+                m_txt_output_file << "  No HallB pulse integral hits in this event\n";
+            }
+
+            // HallB pulse time summary
+            if (have_hallb_pulse_times) {
+                m_txt_output_file << "  HallB pulse time hits: " << hallb_pulse_time_hits.size() << "\n";
+                for (const auto& hit : hallb_pulse_time_hits) {
+                    m_txt_output_file
+                        << "    HALLB_TIME slot=" << hit->slot
+                        << " chan=" << hit->chan
+                        << " pulse_number=" << hit->pulse_number
+                        << " measurement_quality_factor=" << hit->measurement_quality_factor
+                        << " coarse_pulse_time=" << hit->coarse_pulse_time
+                        << " fine_pulse_time=" << hit->fine_pulse_time
+                        << "\n";
+                }
+            } else {
+                m_txt_output_file << "  No HallB pulse time hits in this event\n";
+            }
+
+            // HallB pulse peak summary
+            if (have_hallb_pulse_peaks) {
+                m_txt_output_file << "  HallB pulse peak hits: " << hallb_pulse_peak_hits.size() << "\n";
+                for (const auto& hit : hallb_pulse_peak_hits) {
+                    m_txt_output_file
+                        << "    HALLB_PEAK slot=" << hit->slot
+                        << " chan=" << hit->chan
+                        << " pulse_number=" << hit->pulse_number
+                        << " Vmin=" << hit->Vmin
+                        << " Vpeak=" << hit->Vpeak
+                        << "\n";
+                }
+            } else {
+                m_txt_output_file << "  No HallB pulse peak hits in this event\n";
             }
 
             m_txt_output_file << "\n";
