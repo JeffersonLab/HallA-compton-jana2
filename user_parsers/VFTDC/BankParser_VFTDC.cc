@@ -27,12 +27,13 @@ void BankParser_VFTDC::parse(std::shared_ptr<evio::BaseStructure> data_block,
     uint32_t block_slot = 0;
     uint32_t block_board_id = 0;
     uint64_t event_timestamp = 0;
-    uint32_t event_number = 0;
+    uint64_t event_number = 0;
     int block_nevents = -1;  // -1 indicates no block header processed yet
-    
+    uint64_t event_index = 0;
+
     // Map from event_number to EventHits_VFTDC, used to merge hits from
     // multiple blocks within the same data bank into a single PhysicsEvent.
-    std::map<uint32_t, std::shared_ptr<EventHits_VFTDC>> event_hits_map;
+    std::map<uint64_t, std::shared_ptr<EventHits_VFTDC>> event_hits_map;
 
     // Process each data word sequentially
     for (size_t j = 0; j < data_words.size(); j++) {
@@ -54,6 +55,7 @@ void BankParser_VFTDC::parse(std::shared_ptr<evio::BaseStructure> data_block,
                     );
                 }
                 block_nevents = -1;
+                event_index = 0;
             } else if (data_type == 2) { // Event header
                 if (block_nevents <= 0) {
                     throw JException(
@@ -68,7 +70,8 @@ void BankParser_VFTDC::parse(std::shared_ptr<evio::BaseStructure> data_block,
                         "BankParser_VFTDC::parse: Invalid data format — event slot mismatch with block slot"
                     );
                 }
-                event_number = getBitsInRange(d, 21, 0);
+                event_number = trigger_data.first_event_number + event_index;
+                event_index++;
                 if (event_hits_map.find(event_number) == event_hits_map.end()) {
                     event_hits_map[event_number] = std::make_shared<EventHits_VFTDC>();
                 }
