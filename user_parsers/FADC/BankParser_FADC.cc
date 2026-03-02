@@ -105,7 +105,29 @@ void BankParser_FADC::parse(std::shared_ptr<evio::BaseStructure> data_block,
                     rocid, block_slot, module_id, chan, waveform_len
                 );
                 event_hits_map[event_number]->waveforms.push_back(new FADC250WaveformHit(hit));
-            } else if (data_type == 9) { // Pulse data
+            } else if (data_type == 7) { // Pulse Integral data
+                if (block_nevents < 0) {
+                    throw JException(
+                        "BankParser_FADC::parse: Invalid data format — pulse integral data word before block & event header"
+                    );
+                }
+                uint32_t chan = getBitsInRange(d, 26, 23);
+                uint32_t pulse_number = getBitsInRange(d, 22, 21);
+                uint32_t pulse_integral = getBitsInRange(d, 20, 0);
+                event_hits_map[event_number]->pulse_integrals.push_back(new FADC250HallBPulseIntegralHit(trigger_num, timestamp1, timestamp2, rocid, block_slot, module_id, chan, pulse_number, pulse_integral));
+            } else if (data_type == 8) { // Pulse Time data
+                if (block_nevents < 0) {
+                    throw JException(
+                        "BankParser_FADC::parse: Invalid data format — pulse time data word before block & event header"
+                    );
+                }
+                uint32_t chan = getBitsInRange(d, 26, 23);
+                uint32_t pulse_number = getBitsInRange(d, 22, 21);
+                uint32_t measurement_quality_factor = getBitsInRange(d, 20, 19);
+                uint32_t coarse_pulse_time = getBitsInRange(d, 15, 6);
+                uint32_t fine_pulse_time = getBitsInRange(d, 5, 0);
+                event_hits_map[event_number]->pulse_times.push_back(new FADC250HallBPulseTimeHit(trigger_num, timestamp1, timestamp2, rocid, block_slot, module_id, chan, pulse_number, measurement_quality_factor, coarse_pulse_time, fine_pulse_time));
+            } else if (data_type == 9) { // Pulse Raw data
                 if (block_nevents < 0) {
                     throw JException(
                         "BankParser_FADC::parse: Invalid data format — pulse data word before block & event header"
@@ -123,6 +145,17 @@ void BankParser_FADC::parse(std::shared_ptr<evio::BaseStructure> data_block,
                 for (auto& hit : hits) {
                     event_hits_map[event_number]->pulses.push_back(new FADC250PulseHit(hit));
                 }
+            } else if (data_type == 10) { // Pulse Peak data
+                if (block_nevents < 0) {
+                    throw JException(
+                        "BankParser_FADC::parse: Invalid data format — pulse peak data word before block & event header"
+                    );
+                }
+                uint32_t chan = getBitsInRange(d, 26, 23);
+                uint32_t pulse_number = getBitsInRange(d, 22, 21);
+                uint32_t Vmin = getBitsInRange(d, 20, 12);
+                uint32_t Vpeak = getBitsInRange(d, 11, 0);
+                event_hits_map[event_number]->pulse_peaks.push_back(new FADC250HallBPulsePeakHit(trigger_num, timestamp1, timestamp2, rocid, block_slot, module_id, chan, pulse_number, Vmin, Vpeak));
             }
         }
     }
