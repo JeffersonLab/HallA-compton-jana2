@@ -16,7 +16,8 @@
 #include "JEventProcessor_Compton.h"        // Main event processor
 #include "JEventUnfolder_EVIO.h"            // Event unfolder
 #include "JEventService_FilterDB.h"         // Service for ROC/bank filtering
-#include "JEventService_BankParsersMap.h"   // Service for mapping bank IDs to bank parsers
+#include "JEventService_BankToModelMap.h"   // Service for mapping bank IDs to model IDs
+#include "JEventService_ModelParsersMap.h"  // Service for mapping model IDs to parser implementations
 #include "BankParser_FADC.h"                // FADC250 bank parser implementation
 #include "BankParser_FADCScaler.h"          // FADC scaler bank parser implementation
 #include "BankParser_TIScaler.h"            // TI scaler bank parser implementation
@@ -62,19 +63,21 @@ int main(int argc, char* argv[]) {
 
     // Register services
     app.ProvideService(std::make_shared<JEventService_FilterDB>());
-    app.ProvideService(std::make_shared<JEventService_BankParsersMap>());
+    app.ProvideService(std::make_shared<JEventService_BankToModelMap>());
+    app.ProvideService(std::make_shared<JEventService_ModelParsersMap>());
 
     // Initialize the application
     app.Initialize(); // This will initialize the application and make services available
 
-    // Register bank parser implementations
-    auto bank_parsers_svc = app.GetService<JEventService_BankParsersMap>();
-    bank_parsers_svc->addParser(250, new BankParser_FADC());
-    bank_parsers_svc->addParser(9250, new BankParser_FADCScaler());
-    bank_parsers_svc->addParser(9001, new BankParser_TIScaler());
-    bank_parsers_svc->addParser(0xdec, new BankParser_HelicityDecoder());
-    bank_parsers_svc->addParser(10, new BankParser_MPD());
-    bank_parsers_svc->addParser(9, new BankParser_VFTDC());
+    // Register model parser implementations.
+    auto model_parsers_svc = app.GetService<JEventService_ModelParsersMap>();
+    model_parsers_svc->addParser(250, new BankParser_FADC());
+    model_parsers_svc->addParser(9250, new BankParser_FADCScaler());
+    model_parsers_svc->addParser(9001, new BankParser_TIScaler());
+    model_parsers_svc->addParser(0xdec, new BankParser_HelicityDecoder());
+    model_parsers_svc->addParser(3561, new BankParser_MPD());
+    model_parsers_svc->addParser(9, new BankParser_VFTDC());
+
     // Run the application
     app.Run();
 

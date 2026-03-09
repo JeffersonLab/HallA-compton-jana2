@@ -10,7 +10,7 @@ The application uses a two-level event structure (block-level and physics event-
    - Extracts run numbers from run-control events (tags 0xFFD0–0xFFDF) and skips those events
    - In `Emit`, wraps each EVIO event in an `EvioEventWrapper` and inserts it into a block-level `JEvent`
    - In `ProcessParallel`, uses `EvioEventParser` together with `BankParser` implementations
-     registered in `JEventService_BankParsersMap` to decode the wrapped EVIO blocks into
+     resolved via `JEventService_BankToModelMap` and `JEventService_ModelParsersMap` to decode the wrapped EVIO blocks into
      `PhysicsEvent` objects containing detector hits, and inserts those `PhysicsEvent` objects
      into the same block-level event
 
@@ -135,6 +135,29 @@ You can specify a custom ROOT output filename:
 ./build/compton -PROOT_OUT_FILENAME=my_data.root <evio_file>
 ```
 
+### Bank-to-model mapping
+
+The application uses `config/mapping.db` to map EVIO bank tags to model IDs. Each model ID is then matched to its `BankParser` implementation at startup. The file format is two columns, model first:
+
+```text
+# model  bank
+  250    250
+  250    3
+  9250   9250
+```
+
+Each non-comment, non-empty line has two integers:
+- **model** – Hardware model ID used to select the correct `BankParser` implementation
+- **bank** – EVIO bank tag that carries data from that hardware
+
+One model can appear on multiple lines if multiple bank tags carry data from the same model (e.g. model `250` handles both bank `250` and bank `3` above).
+
+To use a different mapping file:
+
+```bash
+./build/compton -PBANKMAP:FILE=<file_path> <evio_file>
+```
+
 ### ROC / bank filtering
 
 You can restrict which ROC and bank IDs are decoded by providing a simple text file and enabling filtering:
@@ -200,7 +223,8 @@ This will:
 - `parser/data_objects/EventHits.h` – Abstract container interface for all event hits
 - `parser/data_objects/EvioEventWrapper.h` – JANA2 object wrapper for EVIO events (allows `std::shared_ptr` to be passed through the JANA2 pipeline)
 - `parser/data_objects/TriggerData.h` – Simple POD holding trigger metadata for an EVIO block
-- `services/JEventService_BankParsersMap.h` – JANA service mapping bank IDs to `BankParser` implementations
+- `services/JEventService_BankToModelMap.h` – JANA service mapping bank IDs to model IDs
+- `services/JEventService_ModelParsersMap.h` – JANA service mapping model IDs to `BankParser` implementations
 - `services/JEventService_FilterDB.h` – JANA service providing ROC/bank filters loaded from a text file (e.g. `filter.db`)
 
 This core parser area and services layer are intended to stay generic; you normally do **not** add hardware-specific code here.
@@ -267,13 +291,15 @@ Other provided examples:
      - Extend the `USER_PARSER_LIBS` list with your new library target:
        - `set(USER_PARSER_LIBS ${USER_PARSER_LIBS} myhw_parsers PARENT_SCOPE)`
 
-6. **Register the parser with the service**
-   - In `compton.cc`, after creating the application and service:
-     - Get the service:
-       - `auto bank_parsers_service = app.GetService<JEventService_BankParsersMap>();`
-     - Register your parser for the chosen bank ID:
-       - `bank_parsers_service->addParser(<bank_id>, new BankParser_MyHW());`
-   - The `EvioEventParser` will automatically call `JEventService_BankParsersMap::getParser(bank_id)` for each EVIO bank and dispatch decoding to your parser when the bank tag matches.
+6. **Register the parser with model mapping services**
+   - In `compton.cc`, after creating the application and services:
+     - Get the services:
+       - `auto bank_to_model_service = app.GetService<JEventService_BankToModelMap>();`
+       - `auto model_parsers_service = app.GetService<JEventService_ModelParsersMap>();`
+     - Choose a model ID for your parser and register it:
+       - `model_parsers_service->addParser(<model_id>, new BankParser_MyHW());`
+     - Map your EVIO bank tag to that model ID by adding a `model bank` line to `config/mapping.db`
+   - The `EvioEventParser` resolves `<bank_id> -> <model_id>` and then dispatches using `JEventService_ModelParsersMap::getParser(model_id)`.
 
 7. **Rebuild and test**
    - Re-run CMake and build:

@@ -8,7 +8,7 @@ add_library(parser STATIC
 
 target_link_libraries(parser
     PUBLIC
-        services          # Service utilities (e.g. bank parser map)
+        services          # Service utilities
         evio::eviocc      # EVIO C++ library for data I/O
         ${JANA_LIBRARY}   # JANA2 framework library
 )
