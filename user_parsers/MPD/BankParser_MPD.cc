@@ -100,7 +100,7 @@ void BankParser_MPD::parse(std::shared_ptr<evio::BaseStructure> data_block,
             } else if (data_type == 5) { // MPD Frame
                 if (block_nevents < 0) {
                     throw JException(
-                        "BankParser_MPD::parse: Invalid data format — waveform data word before block & event header"
+                        "BankParser_MPD::parse: Invalid data format — mpd frame word before block & event header"
                     );
                 }
                 auto fiber_id = getBitsInRange(d, 20, 16);

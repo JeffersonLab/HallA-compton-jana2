@@ -7,7 +7,8 @@
 #include "EvioEventWrapper.h"
 
 #include "JEventService_FilterDB.h"
-#include "JEventService_BankParsersMap.h"
+#include "JEventService_BankToModelMap.h"
+#include "JEventService_ModelParsersMap.h"
 
 /**
  * @brief Parse the EVIO event and extract all detector hits
@@ -154,14 +155,26 @@ void EvioEventParser::parseROCBanks(const std::vector<std::shared_ptr<evio::Base
                 continue;
             }
 
-            // Get bank parser
-            auto bank_parser = m_app->GetService<JEventService_BankParsersMap>()->getParser(bank_id);
-            if (bank_parser == nullptr) {
-                throw JException("EvioEventParser::parseROCBanks: No parser found for bank tag %d", bank_id);
+            // Resolve bank ID -> model ID
+            int model_id;
+            auto bank_to_model_svc = m_app->GetService<JEventService_BankToModelMap>();
+            if (bank_to_model_svc == nullptr) {
+                throw JException("EvioEventParser::parseROCBanks: Bank-to-model mapping service not found");
+            }
+            model_id = bank_to_model_svc->getModelId(bank_id);
+            if (model_id == -1) {
+                // ignore any banks that are not mapped to a model
+                continue;
             }
 
-            // Parse bank
-            bank_parser->parse(dma, db_rocid, physics_events, trigger_data);
+            // Get parser by model ID
+            auto model_parser = m_app->GetService<JEventService_ModelParsersMap>()->getParser(model_id);
+            if (model_parser == nullptr) {
+                throw JException("EvioEventParser::parseROCBanks: No parser found for model ID %d (bank tag %d)", model_id, bank_id);
+            }
+
+            // Parse bank using resolved model parser
+            model_parser->parse(dma, db_rocid, physics_events, trigger_data);
         }
     }
 }
