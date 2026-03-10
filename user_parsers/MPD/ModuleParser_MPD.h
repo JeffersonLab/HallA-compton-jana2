@@ -1,14 +1,14 @@
-#ifndef BANKPARSER_MPD_H
-#define BANKPARSER_MPD_H
+#ifndef MODULEPARSER_MPD_H
+#define MODULEPARSER_MPD_H
 
-#include "BankParser.h"
+#include "ModuleParser.h"
 #include "MPDHit.h"
 #include "EventHits_MPD.h"
 /**
- * @class BankParser_MPD
- * @brief BankParser implementation for MPD data
+ * @class ModuleParser_MPD
+ * @brief ModuleParser implementation for MPD data
  */
-class BankParser_MPD : public BankParser {
+class ModuleParser_MPD : public ModuleParser {
 public:
     void parse(std::shared_ptr<evio::BaseStructure> data_block,
                uint32_t rocid,
@@ -17,4 +17,4 @@ public:
     
 };
 
-#endif // BANKPARSER_MPD_H
+#endif // MODULEPARSER_MPD_H

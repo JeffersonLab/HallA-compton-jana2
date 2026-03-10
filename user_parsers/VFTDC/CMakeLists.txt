@@ -2,9 +2,9 @@
 # CMake configuration for VFTDC user parsers
 #
 
-# Library containing VFTDC bank parser implementation
+# Library containing VFTDC module parser implementation
 add_library(vftdc_parser STATIC
-    BankParser_VFTDC.cc
+    ModuleParser_VFTDC.cc
 )
 
 target_include_directories(vftdc_parser

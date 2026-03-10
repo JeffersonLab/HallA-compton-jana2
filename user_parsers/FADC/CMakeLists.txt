@@ -2,9 +2,9 @@
 # CMake configuration for FADC user parsers
 #
 
-# Library containing FADC250 bank parser implementation
+# Library containing FADC250 module parser implementation
 add_library(fadc_parser STATIC
-    BankParser_FADC.cc
+    ModuleParser_FADC.cc
 )
 
 target_include_directories(fadc_parser

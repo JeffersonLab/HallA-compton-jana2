@@ -2,9 +2,9 @@
 # CMake configuration for MPD user parsers
 #
 
-# Library containing MPD bank parser implementation
+# Library containing MPD module parser implementation
 add_library(mpd_parser STATIC
-    BankParser_MPD.cc
+    ModuleParser_MPD.cc
 )
 
 target_include_directories(mpd_parser

@@ -9,8 +9,8 @@ The application uses a two-level event structure (block-level and physics event-
 1. **JEventSource_EVIO** reads EVIO files and creates block-level events:
    - Extracts run numbers from run-control events (tags 0xFFD0–0xFFDF) and skips those events
    - In `Emit`, wraps each EVIO event in an `EvioEventWrapper` and inserts it into a block-level `JEvent`
-   - In `ProcessParallel`, uses `EvioEventParser` together with `BankParser` implementations
-     resolved via `JEventService_BankToModelMap` and `JEventService_ModelParsersMap` to decode the wrapped EVIO blocks into
+   - In `ProcessParallel`, uses `EvioEventParser` together with `ModuleParser` implementations
+     resolved via `JEventService_BankToModuleMap` and `JEventService_ModuleParsersMap` to decode the wrapped EVIO blocks into
      `PhysicsEvent` objects containing detector hits, and inserts those `PhysicsEvent` objects
      into the same block-level event
 
@@ -135,22 +135,22 @@ You can specify a custom ROOT output filename:
 ./build/compton -PROOT_OUT_FILENAME=my_data.root <evio_file>
 ```
 
-### Bank-to-model mapping
+### Bank-to-module mapping
 
-The application uses `config/mapping.db` to map EVIO bank tags to model IDs. Each model ID is then matched to its `BankParser` implementation at startup. The file format is two columns, model first:
+The application uses `config/mapping.db` to map EVIO bank tags to module IDs. Each module ID is then matched to its `ModuleParser` implementation at startup. The file format is two columns, module first:
 
 ```text
-# model  bank
+# module  bank
   250    250
   250    3
   9250   9250
 ```
 
 Each non-comment, non-empty line has two integers:
-- **model** – Hardware model ID used to select the correct `BankParser` implementation
+- **module** – Hardware module ID used to select the correct `ModuleParser` implementation
 - **bank** – EVIO bank tag that carries data from that hardware
 
-One model can appear on multiple lines if multiple bank tags carry data from the same model (e.g. model `250` handles both bank `250` and bank `3` above).
+One module can appear on multiple lines if multiple bank tags carry data from the same module (e.g. module `250` handles both bank `250` and bank `3` above).
 
 To use a different mapping file:
 
@@ -165,7 +165,7 @@ You can restrict which ROC and bank IDs are decoded by providing a simple text f
 - `config/filter.db` – Default plain text file in the source tree used for filtering, one entry per line:
 
 ```text
-# rocid  slot  model  bank
+# rocid  slot  module  bank
 21  3  250  250
 22  5  250  250
 ```
@@ -173,7 +173,7 @@ You can restrict which ROC and bank IDs are decoded by providing a simple text f
 Each non-comment, non-empty line has four integers:
 - **rocid** – ROC ID
 - **slot** – Slot number (read and saved but not used yet)
-- **model** – Module model (read and saved but not used yet)
+- **module** – Module ID (read and saved but not used yet)
 - **bank** – Bank tag you want to decode for that ROC
 
 To customize filtering:
@@ -218,13 +218,13 @@ This will:
 ### Core parser area (`parser/`) and services – generic infrastructure
 
 - `parser/EvioEventParser.cc/.h` – EVIO event parsing utilities (block-level to `PhysicsEvent` objects, with optional filtering using `JEventService_FilterDB`)
-- `parser/BankParser.h` – Base interface for all bank parsers (hardware-agnostic)
+- `parser/ModuleParser.h` – Base interface for all bank parsers (hardware-agnostic)
 - `parser/data_objects/PhysicsEvent.h` – Container for physics event data including event number and hits
 - `parser/data_objects/EventHits.h` – Abstract container interface for all event hits
 - `parser/data_objects/EvioEventWrapper.h` – JANA2 object wrapper for EVIO events (allows `std::shared_ptr` to be passed through the JANA2 pipeline)
 - `parser/data_objects/TriggerData.h` – Simple POD holding trigger metadata for an EVIO block
-- `services/JEventService_BankToModelMap.h` – JANA service mapping bank IDs to model IDs
-- `services/JEventService_ModelParsersMap.h` – JANA service mapping model IDs to `BankParser` implementations
+- `services/JEventService_BankToModuleMap.h` – JANA service mapping bank IDs to module IDs
+- `services/JEventService_ModuleParsersMap.h` – JANA service mapping module IDs to `ModuleParser` implementations
 - `services/JEventService_FilterDB.h` – JANA service providing ROC/bank filters loaded from a text file (e.g. `filter.db`)
 
 This core parser area and services layer are intended to stay generic; you normally do **not** add hardware-specific code here.
@@ -236,7 +236,7 @@ its hits and parser implementation plus a small CMake file. The central `user_pa
 adds all subdirectories and collects their libraries into `USER_PARSER_LIBS`, which the main executable links.
 
 - **FADC250 example**
-  - `user_parsers/FADC/BankParser_FADC.cc/.h` – `BankParser` implementation for FADC250 data
+  - `user_parsers/FADC/ModuleParser_FADC.cc/.h` – `ModuleParser` implementation for FADC250 data
   - `user_parsers/FADC/data_objects/` – FADC-specific hit and event container classes
 
 Other provided examples:
@@ -263,24 +263,24 @@ Other provided examples:
        - Owns `std::vector<...*>` of your hit types.
        - Implements `void insertIntoEvent(JEvent& event) override` to `event.Insert(...)` those hits.
 
-4. **Implement a new `BankParser` subclass**
-   - In `user_parsers/MyHW/BankParser_MyHW.h`:
-     - Include `BankParser.h` and your hit / `EventHits` headers.
-     - Declare a class `BankParser_MyHW : public BankParser` and override:
+4. **Implement a new `ModuleParser` subclass**
+   - In `user_parsers/MyHW/ModuleParser_MyHW.h`:
+     - Include `ModuleParser.h` and your hit / `EventHits` headers.
+     - Declare a class `ModuleParser_MyHW : public ModuleParser` and override:
        - `void parse(std::shared_ptr<evio::BaseStructure> data_block, uint32_t rocid, std::vector<PhysicsEvent*>& physics_events, TriggerData& block_first_event_data) override;`
-   - In `user_parsers/MyHW/BankParser_MyHW.cc`:
+   - In `user_parsers/MyHW/ModuleParser_MyHW.cc`:
      - Implement `parse(...)` by:
        - Extracting 32-bit words from the EVIO bank (`getUIntData()`).
        - Decoding headers/trailers/words for your hardware.
        - Filling a `std::shared_ptr<EventHits_MyHW>` as you walk the words.
        - Creating `PhysicsEvent*` objects with `std::shared_ptr<EventHits>` (upcast from `EventHits_MyHW`) and pushing them into `physics_events`.
-     - Reuse `BankParser::getBitsInRange(...)` helper to extract bit fields, similar to `BankParser_FADC`.
+     - Reuse `ModuleParser::getBitsInRange(...)` helper to extract bit fields, similar to `ModuleParser_FADC`.
 
 5. **Expose your new parser to CMake**
    - Add a dedicated CMake file for your parser, similar to the existing ones:
      - Create `user_parsers/MyHW/CMakeLists.txt` which:
        - Defines a library for your parser, for example:
-         - `add_library(myhw_parsers STATIC BankParser_MyHW.cc)`
+         - `add_library(myhw_parsers STATIC ModuleParser_MyHW.cc)`
        - Adds include directories for your headers, e.g.:
          - `target_include_directories(myhw_parsers PUBLIC ${PROJECT_SOURCE_DIR}/user_parsers/MyHW ${PROJECT_SOURCE_DIR}/user_parsers/MyHW/data_objects)`
        - Links against the core `parser` library:
@@ -291,15 +291,15 @@ Other provided examples:
      - Extend the `USER_PARSER_LIBS` list with your new library target:
        - `set(USER_PARSER_LIBS ${USER_PARSER_LIBS} myhw_parsers PARENT_SCOPE)`
 
-6. **Register the parser with model mapping services**
+6. **Register the parser with module mapping services**
    - In `compton.cc`, after creating the application and services:
      - Get the services:
-       - `auto bank_to_model_service = app.GetService<JEventService_BankToModelMap>();`
-       - `auto model_parsers_service = app.GetService<JEventService_ModelParsersMap>();`
-     - Choose a model ID for your parser and register it:
-       - `model_parsers_service->addParser(<model_id>, new BankParser_MyHW());`
-     - Map your EVIO bank tag to that model ID by adding a `model bank` line to `config/mapping.db`
-   - The `EvioEventParser` resolves `<bank_id> -> <model_id>` and then dispatches using `JEventService_ModelParsersMap::getParser(model_id)`.
+       - `auto bank_to_module_service = app.GetService<JEventService_BankToModuleMap>();`
+       - `auto module_parsers_service = app.GetService<JEventService_ModuleParsersMap>();`
+     - Choose a module ID for your parser and register it:
+       - `module_parsers_service->addParser(<module_id>, new ModuleParser_MyHW());`
+     - Map your EVIO bank tag to that module ID by adding a `module bank` line to `config/mapping.db`
+   - The `EvioEventParser` resolves `<bank_id> -> <module_id>` and then dispatches using `JEventService_ModuleParsersMap::getParser(module_id)`.
 
 7. **Rebuild and test**
    - Re-run CMake and build:

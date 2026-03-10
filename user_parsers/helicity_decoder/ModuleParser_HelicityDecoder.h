@@ -1,18 +1,18 @@
-#ifndef BANKPARSER_HELICITYDECODER_H
-#define BANKPARSER_HELICITYDECODER_H
+#ifndef MODULEPARSER_HELICITYDECODER_H
+#define MODULEPARSER_HELICITYDECODER_H
 
-#include "BankParser.h"
+#include "ModuleParser.h"
 #include "HelicityDecoderData.h"
 #include "EventHits_HelicityDecoder.h"
 
 /**
- * @class BankParser_HelicityDecoder
- * @brief BankParser implementation for helicity decoder data
+ * @class ModuleParser_HelicityDecoder
+ * @brief ModuleParser implementation for helicity decoder data
  *
  * This parser decodes helicity decoder board words from an EVIO bank and fills
  * an EventHits_HelicityDecoder container with HelicityDecoderData objects.
  */
-class BankParser_HelicityDecoder : public BankParser {
+class ModuleParser_HelicityDecoder : public ModuleParser {
 public:
     void parse(std::shared_ptr<evio::BaseStructure> data_block,
                uint32_t rocid,
@@ -47,5 +47,5 @@ private:
 
 };
 
-#endif // BANKPARSER_HELICITYDECODER_H
+#endif // MODULEPARSER_HELICITYDECODER_H
 
