@@ -10,7 +10,7 @@
 #include <JANA/JEvent.h>
 
 #include "eviocc.h"
-#include "BankParser.h"
+#include "ModuleParser.h"
 #include "EventHits.h"
 #include "PhysicsEvent.h"
 #include "TriggerData.h"
@@ -20,8 +20,8 @@
  * @brief Helper class for processing a single EVIO block-level JEvent
  *
  * An instance of this class is constructed with a pointer to the JApplication
- * (so it can access services such as JEventService_BankToModelMap and
- * JEventService_ModelParsersMap). The actual
+ * (so it can access services such as JEventService_BankToModuleMap and
+ * JEventService_ModuleParsersMap). The actual
  * JEvent to be parsed is passed to the parse(const JEvent&) method, which
  * extracts PhysicsEvent objects from the EVIO data.
  */
@@ -78,7 +78,7 @@ public:
      * This method inspects the given block-level JEvent, pulls out the
      * underlying EVIO event (via EvioEventWrapper), and:
      *  1. Parses the trigger bank to obtain trigger metadata and ROC segments
-     *  2. Resolves each bank ID to a model ID, then parses using the registered model parsers
+     *  2. Resolves each bank ID to a module ID, then parses using the registered module parsers
      *  3. Fills the provided vector of PhysicsEvent* representing physics events
      *
      * @param event           Block-level JEvent containing an EvioEventWrapper

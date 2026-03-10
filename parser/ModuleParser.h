@@ -1,5 +1,5 @@
-#ifndef BANKPARSER_H
-#define BANKPARSER_H
+#ifndef MODULEPARSER_H
+#define MODULEPARSER_H
 
 #include <vector>
 #include <memory>
@@ -9,16 +9,16 @@
 #include "TriggerData.h"
 
 /**
- * @class BankParser
- * @brief Base class for parsing bank data blocks into PhysicsEvent objects
+ * @class ModuleParser
+ * @brief Base class for parsing module data blocks into PhysicsEvent objects
  *
- * This is the common base type for all user-defined bank parsers. Each
+ * This is the common base type for all user-defined module parsers. Each
  * concrete parser implements the @ref parse method for a specific hardware
- * format (e.g. FADC250). Helper functions for decoding words and building
+ * module (e.g. FADC250). Helper functions for decoding words and building
  * hit objects are provided as protected utility methods so that all parsers
  * can reuse them.
  */
-class BankParser {
+class ModuleParser {
 
 private:
     JLogger* m_logger = nullptr;  ///< Pointer to the jana::JLogger (set via SetLogger)
@@ -31,7 +31,7 @@ protected:
     }
 
 public:
-    virtual ~BankParser() = default;
+    virtual ~ModuleParser() = default;
 
     /**
      * @brief Parse a raw data block and extract physics events
@@ -65,4 +65,4 @@ public:
     JLogger& GetLogger() { return *m_logger; }
 };
 
-#endif // BANKPARSER_H
+#endif // MODULEPARSER_H

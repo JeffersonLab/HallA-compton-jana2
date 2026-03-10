@@ -1,4 +1,4 @@
-#include "BankParser_TIScaler.h"
+#include "ModuleParser_TIScaler.h"
 #include <JANA/JException.h>
 
 /**
@@ -14,7 +14,7 @@
  * @param physics_events Reference to physics events vector (will be updated)
  * @param trigger_data Trigger data for the EVIO block
  */
-void BankParser_TIScaler::parse(std::shared_ptr<evio::BaseStructure> data_block,
+void ModuleParser_TIScaler::parse(std::shared_ptr<evio::BaseStructure> data_block,
                                   uint32_t rocid,
                                   std::vector<PhysicsEvent*>& physics_events,
                                   TriggerData& trigger_data) {
@@ -31,7 +31,7 @@ void BankParser_TIScaler::parse(std::shared_ptr<evio::BaseStructure> data_block,
     hit->rocid = rocid;
     // Sanity check: need at least 1 header word + 12 scaler words
     if (data_words.size() < 13) {
-        throw JException("BankParser_TIScaler::parse: Not enough words (%zu) for TI scaler bank", data_words.size());
+        throw JException("ModuleParser_TIScaler::parse: Not enough words (%zu) for TI scaler bank", data_words.size());
     }
 
     // Parse header word

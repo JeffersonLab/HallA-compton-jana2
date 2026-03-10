@@ -1,4 +1,4 @@
-#include "BankParser_FADCScaler.h"
+#include "ModuleParser_FADCScaler.h"
 #include <JANA/JException.h>
 
 /**
@@ -14,7 +14,7 @@
  * @param physics_events Reference to physics events vector (will be updated)
  * @param trigger_data Trigger data for the EVIO block
  */
-void BankParser_FADCScaler::parse(std::shared_ptr<evio::BaseStructure> data_block,
+void ModuleParser_FADCScaler::parse(std::shared_ptr<evio::BaseStructure> data_block,
                                   uint32_t rocid,
                                   std::vector<PhysicsEvent*>& physics_events,
                                   TriggerData& trigger_data) {
