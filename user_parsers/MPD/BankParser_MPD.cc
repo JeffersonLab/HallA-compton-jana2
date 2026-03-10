@@ -75,14 +75,15 @@ void BankParser_MPD::parse(std::shared_ptr<evio::BaseStructure> data_block,
                 block_nevents--;
 
                 trigger_num = getBitsInRange(d, 15, 0);
-/*
-		if( event_number != trigger_num){
-                    printf("MPD parser warning: event number (%d) != trigger_num (%d) !\n",event_number,trigger_num);
-		}
-*/
                 // Compute event number and get or create the hits container
                 event_number = trigger_data.first_event_number + event_index;
                 event_index++;
+                if( event_number != trigger_num){
+                    // Other levels allowed are: LOG_ERROR, LOG_INFO, LOG_DEBUG, LOG_TRACE
+                    // Refer to https://jeffersonlab.github.io/JANA2/#/howto/configuration for more information
+                    LOG_WARN(GetLogger()) << "BankParser_MPD::parse: Warning - event number " << event_number << " != trigger_num " << trigger_num << LOG_END;
+                }
+
                 if (event_hits_map.find(event_number) == event_hits_map.end()) {
                     event_hits_map[event_number] = std::make_shared<EventHits_MPD>();
                 }
