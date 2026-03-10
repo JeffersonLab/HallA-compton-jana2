@@ -6,6 +6,7 @@
 #include <memory>
 
 #include <JANA/JApplication.h>
+#include <JANA/JLogger.h> 
 #include <JANA/JEvent.h>
 
 #include "eviocc.h"
@@ -28,7 +29,7 @@ class EvioEventParser {
 private:
     
     JApplication* m_app;        ///< Owning JApplication (for accessing services)
-    
+    JLogger& m_logger;         ///< Reference to the jana::JLogger
     /**
      * Parse trigger bank and extract ROC segments
      *
@@ -61,9 +62,10 @@ public:
      * provided when calling parse(const JEvent&).
      *
      * @param app Pointer to the owning JApplication
+     * @param logger Reference to the jana::JLogger
      */
-    EvioEventParser(JApplication* app)
-        : m_app(app) {};
+    EvioEventParser(JApplication* app, JLogger& logger)
+        : m_app(app), m_logger(logger) {};
     
     /**
      * Destructor
@@ -83,6 +85,13 @@ public:
      * @param physics_events  Output vector which will be filled with PhysicsEvent*
      */
     void parse(const JEvent& event, std::vector<PhysicsEvent*>& physics_events);
+
+    /**
+     * @brief Get the logger
+     *
+     * @return Reference to the jana::JLogger
+     */
+    JLogger& GetLogger() { return m_logger; }
 };
 
 #endif // EVIOEVENTPARSER_H
