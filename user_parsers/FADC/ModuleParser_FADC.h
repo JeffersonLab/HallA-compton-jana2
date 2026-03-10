@@ -1,15 +1,15 @@
-#ifndef BANKPARSER_FADC_H
-#define BANKPARSER_FADC_H
+#ifndef MODULEPARSER_FADC_H
+#define MODULEPARSER_FADC_H
 
-#include "BankParser.h"
+#include "ModuleParser.h"
 #include "FADC250WaveformHit.h"
 #include "FADC250PulseHit.h"
 
 /**
- * @class BankParser_FADC
- * @brief BankParser implementation for FADC250 data
+ * @class ModuleParser_FADC
+ * @brief ModuleParser implementation for FADC250 data
  */
-class BankParser_FADC : public BankParser {
+class ModuleParser_FADC : public ModuleParser {
 public:
     void parse(std::shared_ptr<evio::BaseStructure> data_block,
                uint32_t rocid,
@@ -75,4 +75,4 @@ private:
     );
 };
 
-#endif // BANKPARSER_FADC_H
+#endif // MODULEPARSER_FADC_H

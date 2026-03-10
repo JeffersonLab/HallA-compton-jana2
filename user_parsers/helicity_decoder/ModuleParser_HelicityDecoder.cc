@@ -1,4 +1,4 @@
-#include "BankParser_HelicityDecoder.h"
+#include "ModuleParser_HelicityDecoder.h"
 #include "EventHits_HelicityDecoder.h"
 #include <JANA/JException.h>
 
@@ -15,7 +15,7 @@
  * @param rocid ROC ID for this data block
  * @param physics_events Reference to physics events vector (will be updated)
  */
-void BankParser_HelicityDecoder::parse(std::shared_ptr<evio::BaseStructure> data_block,
+void ModuleParser_HelicityDecoder::parse(std::shared_ptr<evio::BaseStructure> data_block,
                                uint32_t rocid,
                                std::vector<PhysicsEvent*>& physics_events,
                                TriggerData& trigger_data) {
@@ -53,7 +53,7 @@ void BankParser_HelicityDecoder::parse(std::shared_ptr<evio::BaseStructure> data
             } else if (data_type == 1) { // Block trailer              
                 if (block_nevents != 0) {
                     throw JException(
-                        "BankParser::parseRawData: Invalid data format — block trailer word before reading in all events"
+                        "ModuleParser_HelicityDecoder::parse: Invalid data format — block trailer word before reading in all events"
                     );
                 }
                 block_nevents = -1;
@@ -70,14 +70,14 @@ void BankParser_HelicityDecoder::parse(std::shared_ptr<evio::BaseStructure> data
                 }
                 if (block_nevents <= 0) {
                     throw JException(
-                        "BankParser::parseRawData: Invalid data format — event header before block header"
+                        "ModuleParser_HelicityDecoder::parse: Invalid data format — event header before block header"
                     );
                 }
                 block_nevents--;
                 auto eh_slot = getBitsInRange(d, 26, 22);
                 if (eh_slot != block_slot) {
                     throw JException(
-                        "BankParser::parseRawData: Invalid data — event slot(%d) !=  block slot(%d)", 
+                        "ModuleParser_HelicityDecoder::parse: Invalid data — event slot(%d) != block slot(%d)", 
                         eh_slot, block_slot
                     );
                 }
@@ -87,7 +87,7 @@ void BankParser_HelicityDecoder::parse(std::shared_ptr<evio::BaseStructure> data
             } else if (data_type == 3) { // Trigger time
                 if (block_nevents < 0) {
                     throw JException(
-                        "BankParser::parseRawData: Invalid data format — trigger time word before block & event header"
+                        "ModuleParser_HelicityDecoder::parse: Invalid data format — trigger time word before block & event header"
                     );
                 }
                 timestamp1 = getBitsInRange(d, 23, 0);
@@ -96,7 +96,7 @@ void BankParser_HelicityDecoder::parse(std::shared_ptr<evio::BaseStructure> data
             } else if (data_type == 8) { // decoder data header
                 if (block_nevents < 0) {
                     throw JException(
-                        "BankParser::parseRawData: Invalid data format — helicity decoder data word before block & event header"
+                        "ModuleParser_HelicityDecoder::parse: Invalid data format — helicity decoder data word before block & event header"
                     );
                 }
                 uint32_t nwords = getBitsInRange(d, 5, 0);
@@ -120,7 +120,7 @@ void BankParser_HelicityDecoder::parse(std::shared_ptr<evio::BaseStructure> data
 /**
  * @brief Parse decoder data from data words
  */
-HelicityDecoderData BankParser_HelicityDecoder::parseDecoderData(
+HelicityDecoderData ModuleParser_HelicityDecoder::parseDecoderData(
     const std::vector<uint32_t>& data_words,
     size_t& index,
     uint32_t trigger_num,

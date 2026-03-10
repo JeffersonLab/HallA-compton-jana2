@@ -2,9 +2,9 @@
 # CMake configuration for helicity decoder user parsers
 #
 
-# Library containing helicity decoder bank parser implementation
+# Library containing helicity decoder module parser implementation
 add_library(helicity_decoder_parsers STATIC
-    BankParser_HelicityDecoder.cc
+    ModuleParser_HelicityDecoder.cc
 )
 
 target_include_directories(helicity_decoder_parsers

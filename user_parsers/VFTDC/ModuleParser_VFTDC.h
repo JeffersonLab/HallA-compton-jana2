@@ -1,14 +1,14 @@
-#ifndef BANKPARSER_VFTDC_H
-#define BANKPARSER_VFTDC_H
+#ifndef MODULEPARSER_VFTDC_H
+#define MODULEPARSER_VFTDC_H
 
-#include "BankParser.h"
+#include "ModuleParser.h"
 #include "VFTDCHit.h"
 #include "EventHits_VFTDC.h"
 /**
- * @class BankParser_VFTDC
- * @brief BankParser implementation for VFTDC data
+ * @class ModuleParser_VFTDC
+ * @brief ModuleParser implementation for VFTDC data
  */
-class BankParser_VFTDC : public BankParser {
+class ModuleParser_VFTDC : public ModuleParser {
 public:
     void parse(std::shared_ptr<evio::BaseStructure> data_block,
                uint32_t rocid,
@@ -17,4 +17,4 @@ public:
     
 };
 
-#endif // BANKPARSER_VFTDC_H
+#endif // MODULEPARSER_VFTDC_H

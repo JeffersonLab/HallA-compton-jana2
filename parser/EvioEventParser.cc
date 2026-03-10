@@ -7,8 +7,8 @@
 #include "EvioEventWrapper.h"
 
 #include "JEventService_FilterDB.h"
-#include "JEventService_BankToModelMap.h"
-#include "JEventService_ModelParsersMap.h"
+#include "JEventService_BankToModuleMap.h"
+#include "JEventService_ModuleParsersMap.h"
 
 /**
  * @brief Parse the EVIO event and extract all detector hits
@@ -16,7 +16,7 @@
  * This method orchestrates the parsing of an EVIO event by:
  * 1. Validating the event structure
  * 2. Parsing the trigger bank to extract ROC segments and event number
- * 3. Parsing data banks to extract detector hits using BankParser
+ * 3. Parsing data banks to extract detector hits using ModuleParser
  */
 void EvioEventParser::parse(const JEvent& event, std::vector<PhysicsEvent*>& physics_events) {
     // Get all child structures (Trigger Bank + ROC Banks)
@@ -103,7 +103,7 @@ std::vector<std::shared_ptr<evio::BaseStructure>> EvioEventParser::parseTriggerB
  * This method processes the data banks by:
  * 1. Validating that the number of data banks matches trigger bank ROC segments
  * 2. Matching ROC IDs between trigger and data banks
- * 3. Parsing each data block using BankParser
+ * 3. Parsing each data block using ModuleParser
  * 
  * @param data_banks                 Vector of data banks to parse
  * @param trigger_bank_roc_segments  Vector of trigger bank ROC segments for validation
@@ -145,7 +145,7 @@ void EvioEventParser::parseROCBanks(const std::vector<std::shared_ptr<evio::Base
             continue;
         }
         
-        // Parse one or more DMA banks within this ROC bank using the registered BankParsers
+        // Parse one or more DMA banks within this ROC bank using the registered ModuleParsers
         auto dma_blocks = db->getChildren();
         for (auto dma : dma_blocks) {
             auto bank_id = dma->getHeader()->getTag();
@@ -155,29 +155,29 @@ void EvioEventParser::parseROCBanks(const std::vector<std::shared_ptr<evio::Base
                 continue;
             }
 
-            // Resolve bank ID -> model ID
-            int model_id;
-            auto bank_to_model_svc = m_app->GetService<JEventService_BankToModelMap>();
-            if (bank_to_model_svc == nullptr) {
-                throw JException("EvioEventParser::parseROCBanks: Bank-to-model mapping service not found");
+            // Resolve bank ID -> module ID
+            int module_id;
+            auto bank_to_module_svc = m_app->GetService<JEventService_BankToModuleMap>();
+            if (bank_to_module_svc == nullptr) {
+                throw JException("EvioEventParser::parseROCBanks: Bank-to-module mapping service not found");
             }
-            model_id = bank_to_model_svc->getModelId(bank_id);
-            if (model_id == -1) {
-                // ignore any banks that are not mapped to a model
+            module_id = bank_to_module_svc->getModuleId(bank_id);
+            if (module_id == -1) {
+                // ignore any banks that are not mapped to a module
                 continue;
             }
 
-            // Get parser by model ID
-            auto model_parser = m_app->GetService<JEventService_ModelParsersMap>()->getParser(model_id);
-            if (model_parser == nullptr) {
-                throw JException("EvioEventParser::parseROCBanks: No parser found for model ID %d (bank tag %d)", model_id, bank_id);
+            // Get parser by module ID
+            auto module_parser = m_app->GetService<JEventService_ModuleParsersMap>()->getParser(module_id);
+            if (module_parser == nullptr) {
+                throw JException("EvioEventParser::parseROCBanks: No parser found for module ID %d (bank tag %d)", module_id, bank_id);
             }
 
             // Set the logger equal to component logger
-            model_parser->SetLogger(m_logger);
+            module_parser->SetLogger(m_logger);
 
-            // Parse bank using resolved model parser
-            model_parser->parse(dma, db_rocid, physics_events, trigger_data);
+            // Parse bank using resolved module parser
+            module_parser->parse(dma, db_rocid, physics_events, trigger_data);
         }
     }
 }

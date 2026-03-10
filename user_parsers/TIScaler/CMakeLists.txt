@@ -2,9 +2,9 @@
 # CMake configuration for TI scaler user parsers
 #
 
-# Library containing TI scaler bank parser implementation
+# Library containing TI scaler module parser implementation
 add_library(tiscaler_parser STATIC
-    BankParser_TIScaler.cc
+    ModuleParser_TIScaler.cc
 )
 
 target_include_directories(tiscaler_parser

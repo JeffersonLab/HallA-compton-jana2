@@ -2,9 +2,9 @@
 # CMake configuration for FADC scaler user parsers
 #
 
-# Library containing FADC scaler bank parser implementation
+# Library containing FADC scaler module parser implementation
 add_library(fadc_scaler_parser STATIC
-    BankParser_FADCScaler.cc
+    ModuleParser_FADCScaler.cc
 )
 
 target_include_directories(fadc_scaler_parser

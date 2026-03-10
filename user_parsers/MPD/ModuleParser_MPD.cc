@@ -1,4 +1,4 @@
-#include "BankParser_MPD.h"
+#include "ModuleParser_MPD.h"
 #include "EventHits_MPD.h"
 #include <JANA/JException.h>
 
@@ -15,7 +15,7 @@
  * @param rocid ROC ID for this data block
  * @param physics_events Reference to physics events vector (will be updated)
  */
-void BankParser_MPD::parse(std::shared_ptr<evio::BaseStructure> data_block,
+void ModuleParser_MPD::parse(std::shared_ptr<evio::BaseStructure> data_block,
                                uint32_t rocid,
                                std::vector<PhysicsEvent*>& physics_events,
                                TriggerData& trigger_data) {
@@ -52,14 +52,14 @@ void BankParser_MPD::parse(std::shared_ptr<evio::BaseStructure> data_block,
             } else if (data_type == 1) { // Block trailer              
                 if (block_nevents != 0) {
                     throw JException(
-                        "BankParser_MPD::parse: Invalid data format — block trailer word before reading in all events"
+                        "ModuleParser_MPD::parse: Invalid data format — block trailer word before reading in all events"
                     );
                 }
 
                 auto block_trailer_slot = getBitsInRange(d, 26, 22);
                 if (block_trailer_slot != block_slot) {
                     throw JException(
-                        "BankParser_FADC::parse: Invalid data — block trailer slot(%d) != block slot(%d)",
+                        "ModuleParser_MPD::parse: Invalid data — block trailer slot(%d) != block slot(%d)",
                         block_trailer_slot, block_slot
                     );
                 }
@@ -69,7 +69,7 @@ void BankParser_MPD::parse(std::shared_ptr<evio::BaseStructure> data_block,
             } else if (data_type == 2) { // Event header
                 if (block_nevents <= 0) {
                     throw JException(
-                        "BankParser_MPD::parse: Invalid data format — event header before block header"
+                        "ModuleParser_MPD::parse: Invalid data format — event header before block header"
                     );
                 }
                 block_nevents--;
@@ -81,7 +81,7 @@ void BankParser_MPD::parse(std::shared_ptr<evio::BaseStructure> data_block,
                 if( event_number != trigger_num){
                     // Other levels allowed are: LOG_ERROR, LOG_INFO, LOG_DEBUG, LOG_TRACE
                     // Refer to https://jeffersonlab.github.io/JANA2/#/howto/configuration for more information
-                    LOG_WARN(GetLogger()) << "BankParser_MPD::parse: Warning - event number " << event_number << " != trigger_num " << trigger_num << LOG_END;
+                    LOG_WARN(GetLogger()) << "ModuleParser_MPD::parse: Warning - event number " << event_number << " != trigger_num " << trigger_num << LOG_END;
                 }
 
                 if (event_hits_map.find(event_number) == event_hits_map.end()) {
@@ -91,7 +91,7 @@ void BankParser_MPD::parse(std::shared_ptr<evio::BaseStructure> data_block,
             } else if (data_type == 3) { // Trigger time
                 if (block_nevents < 0) {
                     throw JException(
-                        "BankParser_MPD::parse: Invalid data format — trigger time word before block & event header"
+                        "ModuleParser_MPD::parse: Invalid data format — trigger time word before block & event header"
                     );
                 }
                 auto trigger_time_low = getBitsInRange(d, 23, 0);
@@ -101,7 +101,7 @@ void BankParser_MPD::parse(std::shared_ptr<evio::BaseStructure> data_block,
             } else if (data_type == 5) { // MPD Frame
                 if (block_nevents < 0) {
                     throw JException(
-                        "BankParser_MPD::parse: Invalid data format — mpd frame word before block & event header"
+                        "ModuleParser_MPD::parse: Invalid data format — mpd frame word before block & event header"
                     );
                 }
                 auto fiber_id = getBitsInRange(d, 20, 16);

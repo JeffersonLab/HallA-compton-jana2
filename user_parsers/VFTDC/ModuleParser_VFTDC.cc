@@ -1,4 +1,4 @@
-#include "BankParser_VFTDC.h"
+#include "ModuleParser_VFTDC.h"
 #include "EventHits_VFTDC.h"
 #include <JANA/JException.h>
 
@@ -16,7 +16,7 @@
  * @param physics_events Reference to physics events vector (will be updated)
  * @param trigger_data Trigger metadata for this EVIO block
  */
-void BankParser_VFTDC::parse(std::shared_ptr<evio::BaseStructure> data_block,
+void ModuleParser_VFTDC::parse(std::shared_ptr<evio::BaseStructure> data_block,
                                uint32_t rocid,
                                std::vector<PhysicsEvent*>& physics_events,
                                TriggerData& trigger_data) {
@@ -51,7 +51,7 @@ void BankParser_VFTDC::parse(std::shared_ptr<evio::BaseStructure> data_block,
             } else if (data_type == 1) { // Block trailer              
                 if (block_nevents != 0) {
                     throw JException(
-                        "BankParser_VFTDC::parse: Invalid data format — block trailer word before reading in all events"
+                        "ModuleParser_VFTDC::parse: Invalid data format — block trailer word before reading in all events"
                     );
                 }
                 block_nevents = -1;
@@ -59,7 +59,7 @@ void BankParser_VFTDC::parse(std::shared_ptr<evio::BaseStructure> data_block,
             } else if (data_type == 2) { // Event header
                 if (block_nevents <= 0) {
                     throw JException(
-                        "BankParser_VFTDC::parse: Invalid data format — event header before block header"
+                        "ModuleParser_VFTDC::parse: Invalid data format — event header before block header"
                     );
                 }
                 block_nevents--;
@@ -67,7 +67,7 @@ void BankParser_VFTDC::parse(std::shared_ptr<evio::BaseStructure> data_block,
                 auto event_slot = getBitsInRange(d, 26, 22);
                 if (event_slot != block_slot) {
                     throw JException(
-                        "BankParser_VFTDC::parse: Invalid data format — event slot mismatch with block slot"
+                        "ModuleParser_VFTDC::parse: Invalid data format — event slot mismatch with block slot"
                     );
                 }
                 event_number = trigger_data.first_event_number + event_index;
@@ -78,7 +78,7 @@ void BankParser_VFTDC::parse(std::shared_ptr<evio::BaseStructure> data_block,
             } else if (data_type == 3) { // Trigger time
                 if (block_nevents < 0) {
                     throw JException(
-                        "BankParser_VFTDC::parse: Invalid data format — trigger time word before block & event header"
+                        "ModuleParser_VFTDC::parse: Invalid data format — trigger time word before block & event header"
                     );
                 }
                 auto timestamp_low = getBitsInRange(d, 23, 0);
@@ -88,7 +88,7 @@ void BankParser_VFTDC::parse(std::shared_ptr<evio::BaseStructure> data_block,
             } else if (data_type == 7) { // Data word
                 if (block_nevents < 0) {
                     throw JException(
-                        "BankParser_VFTDC::parse: Invalid data format — data word before block & event header"
+                        "ModuleParser_VFTDC::parse: Invalid data format — data word before block & event header"
                     );
                 }
 

@@ -16,14 +16,14 @@
 #include "JEventProcessor_Compton.h"        // Main event processor
 #include "JEventUnfolder_EVIO.h"            // Event unfolder
 #include "JEventService_FilterDB.h"         // Service for ROC/bank filtering
-#include "JEventService_BankToModelMap.h"   // Service for mapping bank IDs to model IDs
-#include "JEventService_ModelParsersMap.h"  // Service for mapping model IDs to parser implementations
-#include "BankParser_FADC.h"                // FADC250 bank parser implementation
-#include "BankParser_FADCScaler.h"          // FADC scaler bank parser implementation
-#include "BankParser_TIScaler.h"            // TI scaler bank parser implementation
-#include "BankParser_HelicityDecoder.h"     // Helicity decoder bank parser implementation
-#include "BankParser_MPD.h"                 // MPD bank parser implementation
-#include "BankParser_VFTDC.h"              // VFTDC bank parser implementation
+#include "JEventService_BankToModuleMap.h"   // Service for mapping bank IDs to module IDs
+#include "JEventService_ModuleParsersMap.h"  // Service for mapping module IDs to parser implementations
+#include "ModuleParser_FADC.h"               // FADC250 module parser implementation
+#include "ModuleParser_FADCScaler.h"         // FADC scaler module parser implementation
+#include "ModuleParser_TIScaler.h"           // TI scaler module parser implementation
+#include "ModuleParser_HelicityDecoder.h"    // Helicity decoder module parser implementation
+#include "ModuleParser_MPD.h"                // MPD module parser implementation
+#include "ModuleParser_VFTDC.h"             // VFTDC module parser implementation
 /**
  * @brief Main function for experiment data processing application
  * 
@@ -63,20 +63,20 @@ int main(int argc, char* argv[]) {
 
     // Register services
     app.ProvideService(std::make_shared<JEventService_FilterDB>());
-    app.ProvideService(std::make_shared<JEventService_BankToModelMap>());
-    app.ProvideService(std::make_shared<JEventService_ModelParsersMap>());
+    app.ProvideService(std::make_shared<JEventService_BankToModuleMap>());
+    app.ProvideService(std::make_shared<JEventService_ModuleParsersMap>());
 
     // Initialize the application
     app.Initialize(); // This will initialize the application and make services available
 
-    // Register model parser implementations.
-    auto model_parsers_svc = app.GetService<JEventService_ModelParsersMap>();
-    model_parsers_svc->addParser(250, new BankParser_FADC());
-    model_parsers_svc->addParser(9250, new BankParser_FADCScaler());
-    model_parsers_svc->addParser(9001, new BankParser_TIScaler());
-    model_parsers_svc->addParser(0xdec, new BankParser_HelicityDecoder());
-    model_parsers_svc->addParser(3561, new BankParser_MPD());
-    model_parsers_svc->addParser(9, new BankParser_VFTDC());
+    // Register module parser implementations.
+    auto module_parsers_svc = app.GetService<JEventService_ModuleParsersMap>();
+    module_parsers_svc->addParser(250, new ModuleParser_FADC());
+    module_parsers_svc->addParser(9250, new ModuleParser_FADCScaler());
+    module_parsers_svc->addParser(9001, new ModuleParser_TIScaler());
+    module_parsers_svc->addParser(0xdec, new ModuleParser_HelicityDecoder());
+    module_parsers_svc->addParser(3561, new ModuleParser_MPD());
+    module_parsers_svc->addParser(9, new ModuleParser_VFTDC());
 
     // Run the application
     app.Run();

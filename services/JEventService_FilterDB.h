@@ -14,18 +14,18 @@
 
 /**
  * @class JEventService_FilterDB
- * @brief JANA service providing ROC/slot/model/bank allow-list filtering
+ * @brief JANA service providing ROC/slot/module/bank allow-list filtering
  * 
  * This service maintains a filter database loaded from a text file that specifies
- * which ROC IDs, slots, models, and banks are allowed for processing. When filtering
+ * which ROC IDs, slots, modules, and banks are allowed for processing. When filtering
  * is enabled, only data matching the allow-list will be processed. If filtering is
  * disabled or no filter database is loaded, all data is allowed.
  * 
  * Filter file format (one entry per line):
- *   rocid slot model bank
+ *   rocid slot module bank
  * 
  * Example:
- *   # rocid  slot  model  bank
+ *   # rocid  slot  module  bank
  *   21  3  250  250
  *   22  5  250  250
  */
@@ -35,12 +35,12 @@ private:
     /**
      * @brief Filter database data structure
      * 
-     * Nested map structure: rocid -> ("banks" | "slots" | "models") -> list of allowed values
+     * Nested map structure: rocid -> ("banks" | "slots" | "modules") -> list of allowed values
      * 
      * Example:
      *   data[21]["banks"] = {250, 251}
      *   data[21]["slots"] = {3}
-     *   data[21]["models"] = {250}
+     *   data[21]["modules"] = {250}
      */
     std::map<int, std::map<std::string, std::vector<int>>> data;
 
@@ -65,7 +65,7 @@ public:
     Parameter<bool> m_filter_enable {this, "FILTER:ENABLE", false,
                                      "Enable ROC/bank filtering using FILTER:FILE (true/false, default false)", true};
     Parameter<std::string> m_filter_file {this, "FILTER:FILE", "config/filter.db",
-                                          "Filter DB filename with lines: 'rocid slot model bank'", true};
+                                          "Filter DB filename with lines: 'rocid slot module bank'", true};
 
     void Init() override;
    
@@ -75,5 +75,5 @@ public:
 
     bool isSlotAllowed(int rocid, int slot);
 
-    bool isModelAllowed(int rocid, int model);
+    bool isModuleAllowed(int rocid, int module);
 };
