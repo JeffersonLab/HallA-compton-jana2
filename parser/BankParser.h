@@ -19,6 +19,17 @@
  * can reuse them.
  */
 class BankParser {
+
+private:
+    JLogger* m_logger = nullptr;  ///< Pointer to the jana::JLogger (set via SetLogger)
+
+protected:
+
+    /// Extract bits from a 32-bit word (utility shared by derived parsers)
+    uint32_t getBitsInRange(uint32_t x, int high, int low) {
+        return (x >> low) & ((1u << (high - low + 1)) - 1);
+    }
+
 public:
     virtual ~BankParser() = default;
 
@@ -39,11 +50,19 @@ public:
                        std::vector<PhysicsEvent*>& physics_events,
                        TriggerData& trigger_data) = 0;
 
-protected:
-    /// Extract bits from a 32-bit word (utility shared by derived parsers)
-    uint32_t getBitsInRange(uint32_t x, int high, int low) {
-        return (x >> low) & ((1u << (high - low + 1)) - 1);
-    }
+    /**
+     * @brief Set the logger
+     *
+     * @param logger Reference to the jana::JLogger
+     */
+    void SetLogger(JLogger& logger) { m_logger = &logger; }
+
+    /**
+     * @brief Get the logger
+     *
+     * @return Reference to the jana::JLogger
+     */
+    JLogger& GetLogger() { return *m_logger; }
 };
 
 #endif // BANKPARSER_H

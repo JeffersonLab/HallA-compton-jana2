@@ -173,6 +173,9 @@ void EvioEventParser::parseROCBanks(const std::vector<std::shared_ptr<evio::Base
                 throw JException("EvioEventParser::parseROCBanks: No parser found for model ID %d (bank tag %d)", model_id, bank_id);
             }
 
+            // Set the logger equal to component logger
+            model_parser->SetLogger(m_logger);
+
             // Parse bank using resolved model parser
             model_parser->parse(dma, db_rocid, physics_events, trigger_data);
         }
