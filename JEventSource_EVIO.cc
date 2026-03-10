@@ -46,8 +46,8 @@ void JEventSource_EVIO::Open() {
     m_evio_reader = std::make_unique<evio::EvioReader>(resource_name);
 
     // Create EVIO event parser, JApplication is used to access
-    // bank->model and model->parser mapping services
-    m_evio_event_parser = std::make_unique<EvioEventParser>(GetApplication());
+    // services and JLogger is used for logging
+    m_evio_event_parser = std::make_unique<EvioEventParser>(GetApplication(), GetLogger());
 }
 
 /**
