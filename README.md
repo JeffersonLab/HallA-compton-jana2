@@ -1,310 +1,146 @@
-# FADC250 Data Processing Application
+# jana2-common-extensions
 
-A JANA2-based application for the Compton experiment to process data from EVIO-format files.
+A collection of reusable [JANA2](https://jeffersonlab.github.io/JANA2/) plugins and libraries for reading and decoding EVIO-format data files produced by Jefferson Lab experiments. This repository can be extended for any experiment that uses EVIO-format readout with VME/VXS hardware modules.
 
-## Data Processing Flow
+## Table of Contents
 
-The application uses a two-level event structure (block-level and physics event-level) to process EVIO data:
+- [Dependencies](#dependencies)
+- [Build Instructions](#build-instructions)
+- [Installation Layout](#installation-layout)
+- [Using the Plugins with JANA2](#using-the-plugins-with-jana2)
+- [Plugin Documentation](#plugin-documentation)
 
-1. **JEventSource_EVIO** reads EVIO files and creates block-level events:
-   - Extracts run numbers from run-control events (tags 0xFFD0–0xFFDF) and skips those events
-   - In `Emit`, wraps each EVIO event in an `EvioEventWrapper` and inserts it into a block-level `JEvent`
-   - In `ProcessParallel`, uses `EvioEventParser` together with `ModuleParser` implementations
-     resolved via `JEventService_BankToModuleMap` and `JEventService_ModuleParsersMap` to decode the wrapped EVIO blocks into
-     `PhysicsEvent` objects containing detector hits, and inserts those `PhysicsEvent` objects
-     into the same block-level event
-
-2. **JEventUnfolder_EVIO** unfolds block-level events into physics event-level child events:
-   - Takes `PhysicsEvent` objects from the block-level parent event
-   - Creates individual physics event-level child events
-
-3. **JEventProcessor_Compton** processes physics event level events:
-   - Receives FADC250 waveform and pulse hits
-   - Writes waveform data to a ROOT TTree
-   - Fills histograms with pulse integral distributions
-   - Outputs results to a ROOT file
-
-## Prerequisites
-
-Before building this application, ensure you have:
-
-- CMake 3.16 or higher
-- C++20 compatible compiler
-- Git (for cloning dependencies)
-- ROOT 6.36.04 (for data analysis and visualization)
-
+---
 ## Dependencies
 
-This project requires the following dependencies:
+| Dependency | Minimum Version | Notes |
+|---|---|---|
+| CMake | 3.16 | Build system |
+| C++ compiler | C++20 | GCC 11+ or Clang 13+ recommended |
+| [JANA2](https://github.com/JeffersonLab/JANA2) | 2.x | Event processing framework |
+| [EVIO](https://github.com/JeffersonLab/evio) | v6.1.2 | Jefferson Lab EVIO C++ library |
+| [ROOT](https://root.cern/install/) | 6.x | Data analysis and output |
 
-### 1. JANA2 Framework
-
-JANA2 provides the core event processing framework for this application.
-
-#### Building JANA2
-
-```bash
+### Building JANA2
+```tcsh
 git clone https://github.com/JeffersonLab/JANA2.git JANA2
 cd JANA2
 cmake -S . -B build -DCMAKE_INSTALL_PREFIX=`pwd`
-cmake --build build --target install -j 20
-```
-
-### 2. EVIO Library
-
-The EVIO library is required for reading and parsing EVIO format data files.
-
-#### Building EVIO
-
-```bash
-git clone https://github.com/JeffersonLab/evio/
-cd evio
-git checkout v6.1.2
-cmake -S . -B build
-cmake --build build --target install --parallel
-```
-
-### 3. Building ROOT
-
-Install ROOT following the guide at https://root.cern/install/
-
-## Building the Application
-
-### Build Instructions
-
-1. **Configure the build:**
-
-```bash
-cmake -S . -B build -DCMAKE_PREFIX_PATH="/path/to/JANA2;/path/to/EVIO/Linux-x86_64;/path/to/ROOT"
-```
-
-Replace the paths with your actual installation directories:
-- `/path/to/JANA2` - Your JANA2 directory
-- `/path/to/EVIO` - Your EVIO directory  
-- `/path/to/ROOT` - Your ROOT installation
-
-2. **Build the application:**
-
-```bash
-cmake --build build --parallel
-```
-
-**Build Types**: Add `-DCMAKE_BUILD_TYPE=Debug` for debugging or `-DCMAKE_BUILD_TYPE=Release` for optimized builds.
-
-### Complete Build Sequence
-
-```bash
-# 1. Build JANA2
-git clone https://github.com/JeffersonLab/JANA2.git JANA2
-cd JANA2
-cmake -S . -B build -DCMAKE_INSTALL_PREFIX=`pwd`
-cmake --build build --target install -j 20
+cmake --build build --target install -j`nproc`
 cd ..
+```
 
-# 2. Build EVIO
+### Building EVIO
+```tcsh
 git clone https://github.com/JeffersonLab/evio/
 cd evio
 git checkout v6.1.2
 cmake -S . -B build
 cmake --build build --target install --parallel
 cd ..
+```
 
-# 3. Build application (adjust ROOT path as needed)
-cd compton_exp
-cmake -S . -B build -DCMAKE_PREFIX_PATH="/path/to/JANA2;/path/to/EVIO/Linux-x86_64;/path/to/ROOT"
+### ROOT
+
+Install ROOT by following the official guide at <https://root.cern/install/>.
+
+---
+
+## Build Instructions
+
+> **Important:** `CMAKE_INSTALL_PREFIX` must be set at **configure time** (the first `cmake` call). It is baked into generated headers (specifically `jce_config_paths.h`) so that config files such as `mapping.db` and `filter.db` are found correctly after installation. Changing it after the build without reconfiguring will produce incorrect paths.
+
+### 1. Configure
+
+```bash
+cmake -S . -B build -DCMAKE_PREFIX_PATH="/path/to/JANA2;/path/to/evio;/path/to/root-6.32.20" -DCMAKE_INSTALL_PREFIX=/path/to/install
+```
+
+Replace the paths in `CMAKE_PREFIX_PATH` with the actual locations of your JANA2, EVIO, and ROOT **installations**.
+
+Optional build-type flags:
+
+```bash
+# Debug build (adds -g, disables optimisation)
+-DCMAKE_BUILD_TYPE=Debug
+
+# Release build (full optimisation)
+-DCMAKE_BUILD_TYPE=Release
+```
+
+### 2. Build
+
+```bash
 cmake --build build --parallel
 ```
 
-**Note**: ROOT installation is not shown here, install ROOT first (see Dependencies section).
-
-## Usage
-
-After building, run the application with:
+### 3. Install
 
 ```bash
-./build/compton [jana_options] <evio_file1> [evio_file2] ...
+cmake --install build
 ```
 
-The application will process the specified EVIO files and create a ROOT output file (`compton.root`).
-### Customizing Output Filename
+---
 
-You can specify a custom ROOT output filename:
+## Installation Layout
+
+After `cmake --install build` the install prefix will contain:
+
+```
+install/
+├── config/
+│   ├── mapping.db          # Bank-to-module ID mapping
+│   └── filter.db           # ROC/bank allow-list (used when filtering is enabled)
+├── include/
+│   └── jce_config_paths.h  # Generated config-path resolver header
+├── lib/
+│   ├── cmake/
+│   │   └── jana2_common_extensionsTargets.cmake
+│   └── plugins/
+│       ├── evio_parser.so
+│       └── evio_processor.so
+│       └── other_plugins.so
+│       └── ....
+└── templates/
+    └── jce_config_paths.h.in
+```
+
+---
+
+## Using the Plugins with JANA2
+
+Point JANA2 to the installed plugin directory using the `JANA_PLUGIN_PATH` environment variable, then request the plugins by name with `-Pplugins=`.
+
+### Basic usage
 
 ```bash
-# Customize ROOT output filename
-./build/compton -PROOT_OUT_FILENAME=my_data.root <evio_file>
+setenv JANA_PLUGIN_PATH ${JCE_INSTALL_PATH}/lib/plugins
+
+jana -Pplugins=evio_parser,evio_processor /path/to/data.evio
 ```
 
-### Bank-to-module mapping
-
-The application uses `config/mapping.db` to map EVIO bank tags to module IDs. Each module ID is then matched to its `ModuleParser` implementation at startup. The file format is two columns, module first:
-
-```text
-# module  bank
-  250    250
-  250    3
-  9250   9250
-```
-
-Each non-comment, non-empty line has two integers:
-- **module** – Hardware module ID used to select the correct `ModuleParser` implementation
-- **bank** – EVIO bank tag that carries data from that hardware
-
-One module can appear on multiple lines if multiple bank tags carry data from the same module (e.g. module `250` handles both bank `250` and bank `3` above).
-
-To use a different mapping file:
+### Combining with other plugin directories
 
 ```bash
-./build/compton -PBANKMAP:FILE=<file_path> <evio_file>
+setenv JANA_PLUGIN_PATH ${JCE_INSTALL_PATH}/lib/plugins:/my/custom/plugins
+
+jana -Pplugins=evio_parser,evio_processor,my_custom_plugin /path/to/data.evio
 ```
 
-### ROC / bank filtering
-
-You can restrict which ROC and bank IDs are decoded by providing a simple text file and enabling filtering:
-
-- `config/filter.db` – Default plain text file in the source tree used for filtering, one entry per line:
-
-```text
-# rocid  slot  module  bank
-21  3  250  250
-22  5  250  250
-```
-
-Each non-comment, non-empty line has four integers:
-- **rocid** – ROC ID
-- **slot** – Slot number (read and saved but not used yet)
-- **module** – Module ID (read and saved but not used yet)
-- **bank** – Bank tag you want to decode for that ROC
-
-To customize filtering:
-
-- Edit `config/filter.db` and:
-  - Add lines for additional (rocid, bank) pairs you want to allow.
-  - Remove or comment out lines (with `#`) for combinations you want to exclude.
-- Or point to your own file with the same four-column structure.
-
-To run with filtering enabled:
+### Running with ROC/bank filtering enabled
 
 ```bash
-./build/compton -PFILTER:ENABLE=1 -PFILTER:FILE=config/filter.db <evio_file>
+jana -Pplugins=evio_parser,evio_processor -PFILTER:ENABLE=1 -PFILTER:FILE=./install/config/filter.db /path/to/data.evio
 ```
 
-If you leave `FILTER:ENABLE` at its default `false` value, no filtering is applied and all ROCs/banks are decoded, regardless of the contents of `config/filter.db`.
+For the full list of runtime parameters see the plugin READMEs linked below.
 
-### Valgrind memory leak check
+---
 
-This project provides a helper CMake target for running Valgrind with ROOT suppressions:
+## Plugin Documentation
 
-- From the build directory, run:
+| Plugin | README |
+|---|---|
+| `evio_parser` | [plugins/evio_parser/README.md](plugins/evio_parser/README.md) |
+| `evio_processor` | [plugins/evio_processor/README.md](plugins/evio_processor/README.md) |
 
-```bash
-cmake --build . --target valgrind-check
-```
-
-This will:
-- Run `valgrind` on `./build/compton` using `scripts/valgrind_check.csh`
-- Store Valgrind output under `build/scripts/valgrind_check/valgrind_out.log`
-- Fail the target (non-zero exit) if any **definite** or **indirect** leaks are reported
-
-## Project Structure
-
-### Core application (framework and processing pipeline)
-
-- `compton.cc` – Main application entry point that registers all components
-- `JEventSource_EVIO.cc/.h` – EVIO file event source (block-level events, plus `ProcessParallel` which creates `PhysicsEvent` objects)
-- `JEventUnfolder_EVIO.h` – Unfolder that creates physics event-level child events from block-level events
-- `JEventProcessor_Compton.cc/.h` – Main event processor that writes data to ROOT file
-
-### Core parser area (`parser/`) and services – generic infrastructure
-
-- `parser/EvioEventParser.cc/.h` – EVIO event parsing utilities (block-level to `PhysicsEvent` objects, with optional filtering using `JEventService_FilterDB`)
-- `parser/ModuleParser.h` – Base interface for all bank parsers (hardware-agnostic)
-- `parser/data_objects/PhysicsEvent.h` – Container for physics event data including event number and hits
-- `parser/data_objects/EventHits.h` – Abstract container interface for all event hits
-- `parser/data_objects/EvioEventWrapper.h` – JANA2 object wrapper for EVIO events (allows `std::shared_ptr` to be passed through the JANA2 pipeline)
-- `parser/data_objects/TriggerData.h` – Simple POD holding trigger metadata for an EVIO block
-- `services/JEventService_BankToModuleMap.h` – JANA service mapping bank IDs to module IDs
-- `services/JEventService_ModuleParsersMap.h` – JANA service mapping module IDs to `ModuleParser` implementations
-- `services/JEventService_FilterDB.h` – JANA service providing ROC/bank filters loaded from a text file (e.g. `filter.db`)
-
-This core parser area and services layer are intended to stay generic; you normally do **not** add hardware-specific code here.
-
-### User extension area (`user_parsers/`) – where to add your hardware code
-
-User-defined hardware parsers live under `user_parsers/`. Each hardware type gets its own subdirectory, with
-its hits and parser implementation plus a small CMake file. The central `user_parsers/CMakeLists.txt` file
-adds all subdirectories and collects their libraries into `USER_PARSER_LIBS`, which the main executable links.
-
-- **FADC250 example**
-  - `user_parsers/FADC/ModuleParser_FADC.cc/.h` – `ModuleParser` implementation for FADC250 data
-  - `user_parsers/FADC/data_objects/` – FADC-specific hit and event container classes
-
-Other provided examples:
-
-- `user_parsers/FADCScaler/` – FADC scaler bank parser and scaler hit data objects
-- `user_parsers/TIScaler/` – TI scaler bank parser and scaler hit data objects
-
-## Adding a new bank parser (step by step)
-
-1. **Pick a bank ID and hardware type**
-   - Decide which EVIO bank tag you want to handle (e.g. `350` for some new module).
-   - Confirm the data format for that bank (word layout, headers, trailers, etc.).
-
-2. **Create a new user parser directory**
-   - Under `user_parsers/`, create a new subdirectory for your hardware, e.g.:
-     - `user_parsers/MyHW/`
-     - `user_parsers/MyHW/data_objects/`
-   - Use `user_parsers/FADC/` as a reference for directory layout.
-
-3. **Define hardware-specific hit and event containers**
-   - In `user_parsers/MyHW/data_objects/`, create:
-     - Hit classes (similar to `FADC250Hit`, `FADC250PulseHit`, `FADC250WaveformHit`) that capture the decoded fields you care about.
-     - A subclass of `EventHits` (similar to `EventHits_FADC`) which:
-       - Owns `std::vector<...*>` of your hit types.
-       - Implements `void insertIntoEvent(JEvent& event) override` to `event.Insert(...)` those hits.
-
-4. **Implement a new `ModuleParser` subclass**
-   - In `user_parsers/MyHW/ModuleParser_MyHW.h`:
-     - Include `ModuleParser.h` and your hit / `EventHits` headers.
-     - Declare a class `ModuleParser_MyHW : public ModuleParser` and override:
-       - `void parse(std::shared_ptr<evio::BaseStructure> data_block, uint32_t rocid, std::vector<PhysicsEvent*>& physics_events, TriggerData& block_first_event_data) override;`
-   - In `user_parsers/MyHW/ModuleParser_MyHW.cc`:
-     - Implement `parse(...)` by:
-       - Extracting 32-bit words from the EVIO bank (`getUIntData()`).
-       - Decoding headers/trailers/words for your hardware.
-       - Filling a `std::shared_ptr<EventHits_MyHW>` as you walk the words.
-       - Creating `PhysicsEvent*` objects with `std::shared_ptr<EventHits>` (upcast from `EventHits_MyHW`) and pushing them into `physics_events`.
-     - Reuse `ModuleParser::getBitsInRange(...)` helper to extract bit fields, similar to `ModuleParser_FADC`.
-
-5. **Expose your new parser to CMake**
-   - Add a dedicated CMake file for your parser, similar to the existing ones:
-     - Create `user_parsers/MyHW/CMakeLists.txt` which:
-       - Defines a library for your parser, for example:
-         - `add_library(myhw_parsers STATIC ModuleParser_MyHW.cc)`
-       - Adds include directories for your headers, e.g.:
-         - `target_include_directories(myhw_parsers PUBLIC ${PROJECT_SOURCE_DIR}/user_parsers/MyHW ${PROJECT_SOURCE_DIR}/user_parsers/MyHW/data_objects)`
-       - Links against the core `parser` library:
-         - `target_link_libraries(myhw_parsers PUBLIC parser)`
-   - Update `user_parsers/CMakeLists.txt` to:
-     - Add your subdirectory:
-       - `add_subdirectory(MyHW)`
-     - Extend the `USER_PARSER_LIBS` list with your new library target:
-       - `set(USER_PARSER_LIBS ${USER_PARSER_LIBS} myhw_parsers PARENT_SCOPE)`
-
-6. **Register the parser with module mapping services**
-   - In `compton.cc`, after creating the application and services:
-     - Get the services:
-       - `auto bank_to_module_service = app.GetService<JEventService_BankToModuleMap>();`
-       - `auto module_parsers_service = app.GetService<JEventService_ModuleParsersMap>();`
-     - Choose a module ID for your parser and register it:
-       - `module_parsers_service->addParser(<module_id>, new ModuleParser_MyHW());`
-     - Map your EVIO bank tag to that module ID by adding a `module bank` line to `config/mapping.db`
-   - The `EvioEventParser` resolves `<bank_id> -> <module_id>` and then dispatches using `JEventService_ModuleParsersMap::getParser(module_id)`.
-
-7. **Rebuild and test**
-   - Re-run CMake and build:
-     - `cmake -S . -B build` (if you changed CMake)
-     - `cmake --build build --parallel`
-   - Run `./build/compton ...` on EVIO files containing your new bank and verify:
-     - `PhysicsEvent` objects now contain your new hits.
-     - `JEventUnfolder_EVIO` passes them to downstream processors (e.g. `JEventProcessor_Compton` or your own processor).
