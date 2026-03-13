@@ -1,6 +1,9 @@
 # Build directory
 build/
 
+# Install directory
+install/
+
 # CMake generated files
 CMakeCache.txt
 CMakeFiles/
@@ -8,9 +11,6 @@ cmake_install.cmake
 Makefile
 *.cmake
 !CMakeLists.txt
-
-# Executable
-compton
 
 # Output files
 *.root
