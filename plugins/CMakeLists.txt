@@ -1,0 +1,2 @@
+add_subdirectory(evio_parser)
+add_subdirectory(evio_processor)
