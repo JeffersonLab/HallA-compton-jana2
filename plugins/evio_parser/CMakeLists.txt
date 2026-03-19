@@ -54,11 +54,3 @@ target_include_directories(evio_parser_data_types INTERFACE
 install(TARGETS evio_parser_data_types
     EXPORT jana2_common_extensionsTargets
 )
-
-# Each plugin owns its config/ folder.
-# Build: jce_config_path("evio_parser","filter.db") finds plugins/evio_parser/config/filter.db
-# Install: installed to config/${INSTALL_NAMESPACE}/evio_parser/ to match the same call after install.
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/config/
-    DESTINATION config/${INSTALL_NAMESPACE}
-    FILES_MATCHING PATTERN "*.db"
-)

@@ -148,18 +148,13 @@ Produces `evio_parser.root` and `evio_parser_hits.txt` in the current directory.
 ### Custom ROOT output filename
 
 ```bash
-jana -Pplugins=evio_parser,evio_processor \
-     -PROOT_OUT_FILENAME=run_042.root \
-     data.evio
+jana -Pplugins=evio_parser,evio_processor -PROOT_OUT_FILENAME=run_042.root data.evio
 ```
 
 ### With filtering and custom mapping
 
 ```bash
-jana -Pplugins=evio_parser,evio_processor \
-     -PFILTER:ENABLE=1 \
-     -PFILTER:FILE=config/filter.db \
-     -PBANKMAP:FILE=config/mapping.db \
-     -PROOT_OUT_FILENAME=run_042_filtered.root \
-     data.evio
+jana -Pplugins=evio_parser,evio_processor -PFILTER:ENABLE=1 -PFILTER:FILE=config/filter.db -PBANKMAP:FILE=config/mapping.db -PROOT_OUT_FILENAME=run_042_filtered.root data.evio
 ```
+
+> These examples use `jana` directly. If you are using the [jce.csh](../../README.md#basic-usage) wrapper, the same parameters can be passed through it.

@@ -16,6 +16,8 @@ find_package(evio REQUIRED)
 find_package(ROOT REQUIRED COMPONENTS Core RIO Tree Hist)
 
 # Add subdirectories
+add_subdirectory(config)
+add_subdirectory(scripts)
 add_subdirectory(templates)
 #add_subdirectory(libraries)
 add_subdirectory(plugins)
