@@ -1,8 +1,12 @@
 # Build directory
-build/
+/build/*
 
 # Install directory
-install/
+/install/*
+
+/bin/
+/include/
+/lib/
 
 # CMake generated files
 CMakeCache.txt
@@ -12,7 +16,7 @@ Makefile
 *.cmake
 !CMakeLists.txt
 
-# Output files
+# Input/Output files
 *.root
 *.evio
-output.txt
+evio_processor_hits.txt

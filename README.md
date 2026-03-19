@@ -62,8 +62,8 @@ Follow the official installation guide:
 
 ### 1. Configure
 
-```bash
-cmake -S . -B build -DCMAKE_PREFIX_PATH="/path/to/JANA2;/path/to/evio;/path/to/root" -DCMAKE_INSTALL_PREFIX=./install
+```tcsh
+cmake -S . -B build -DCMAKE_PREFIX_PATH="/path/to/JANA2;/path/to/evio;/path/to/root" -DCMAKE_INSTALL_PREFIX=`pwd`
 ```
 
 ### 2. Build
@@ -131,13 +131,13 @@ ${JCE_HOME}/scripts/jce.csh /path/to/data.evio
 ```
 
 * Uses plugins from [default_plugins.db](#default-plugins)
-* Falls back to [evio_parser](plugins/evio_parser/README.md) if the file is missing or empty
+* Falls back to [evio_parser](src/plugins/evio_parser/README.md) if the file is missing or empty
 
 
 ### Add Additional Plugins
 
 ```tcsh
-${JCE_HOME}/install/scripts/jce.csh -Pplugins=evio_processor,my_custom_plugin /path/to/data.evio
+${JCE_HOME}/scripts/jce.csh -Pplugins=evio_processor,my_custom_plugin /path/to/data.evio
 ```
 
 ### Using Plugins from External Directories
@@ -152,12 +152,12 @@ You can:
 #### Example
 
 ```tcsh
-${JCE_HOME}/install/scripts/jce.csh -Pjana:plugin_path=/my/custom/plugins -Pplugins=my_custom_plugin /path/to/data.evio
+${JCE_HOME}/scripts/jce.csh -Pjana:plugin_path=/my/custom/plugins -Pplugins=my_custom_plugin /path/to/data.evio
 ```
 
 #### Notes
 
-* `${JCE_HOME}/install/lib/plugins` is always prepended automatically
+* `${JCE_HOME}/lib/plugins` is always prepended automatically
 * User-provided paths are appended afterward
 * Only the directory is required (not the `.so` file)
 
@@ -185,8 +185,8 @@ Configuration files are installed under:
 
 | File                 | Purpose                           | Used By                |
 |----------------------|-----------------------------------|------------------------|
-| `mapping.db`         | Maps EVIO banks to module IDs     | `plugins/evio_parser` |
-| `filter.db`          | Defines ROC/bank filtering rules  | `plugins/evio_parser` |
+| `mapping.db`         | Maps EVIO banks to module IDs     | `src/plugins/evio_parser` |
+| `filter.db`          | Defines ROC/bank filtering rules  | `src/plugins/evio_parser` |
 | `default_plugins.db` | Specifies default plugins to load | `scripts/jce.csh`     |
 
 At runtime, configuration files are resolved using the following precedence:
@@ -223,7 +223,7 @@ If set, all configuration files (`mapping.db`, `filter.db`, `default_plugins.db`
 > **Note:** The filenames must remain the same inside the directory.
 
 For more details on plugin-specific configuration, see
-[`plugins/evio_parser/README.md`](plugins/evio_parser/README.md).
+[`src/plugins/evio_parser/README.md`](src/plugins/evio_parser/README.md).
 
 ---
 

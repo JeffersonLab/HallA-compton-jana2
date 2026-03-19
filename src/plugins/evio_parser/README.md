@@ -59,7 +59,7 @@ Downstream JEventProcessors  (e.g. evio_processor)
 ## Directory Structure
 
 ```
-plugins/evio_parser/
+src/plugins/evio_parser/
 ├── InitPlugin.cc                  # Plugin entry point; registers all components and user parsers
 ├── JEventSource_EVIO.cc/.h        # EVIO file event source
 ├── JEventUnfolder_EVIO.h          # Block → physics event unfolder
@@ -167,7 +167,7 @@ jana -Pplugins=evio_parser,evio_processor -PFILTER:ENABLE=1 -PFILTER:FILE=/path/
 ```
 
 
-> These examples use `jana` directly. If you are using the [jce.csh](../../README.md#basic-usage) wrapper, the same parameters can be passed through it.
+> These examples use `jana` directly. If you are using the [jce.csh](../../../README.md#basic-usage) wrapper, the same parameters can be passed through it.
 
 ## Environment Variables
 
@@ -200,7 +200,7 @@ Decide which EVIO bank tag your module produces (e.g. `350`) and assign a unique
 ### Step 2 — Create the directory layout
 
 ```bash
-mkdir -p plugins/evio_parser/user_parsers/MyHW/data_objects
+mkdir -p src/plugins/evio_parser/user_parsers/MyHW/data_objects
 ```
 
 Use `user_parsers/FADC/` as a reference:
@@ -263,7 +263,7 @@ set(MYHW_PUBLIC_HEADERS ${MYHW_PUBLIC_HEADERS} PARENT_SCOPE)
 
 ### Step 6 — Register the new parser in `user_parsers/CMakeLists.txt`
 
-Open `plugins/evio_parser/user_parsers/CMakeLists.txt` and add three lines:
+Open `src/plugins/evio_parser/user_parsers/CMakeLists.txt` and add three lines:
 
 ```cmake
 # Add subdirectory
@@ -293,7 +293,7 @@ set(USER_PARSER_HEADERS
 
 ### Step 7 — Register the parser instance in `InitPlugin.cc`
 
-Open `plugins/evio_parser/InitPlugin.cc` and add:
+Open `src/plugins/evio_parser/InitPlugin.cc` and add:
 
 ```cpp
 #include "ModuleParser_MyHW.h"   // at the top

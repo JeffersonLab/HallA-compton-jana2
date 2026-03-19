@@ -24,13 +24,11 @@ end
 # Resolve JCE install path for plugins.
 set jce_root = ""
 if ($?JCE_HOME) then
-    set jce_root = "$JCE_HOME/install"
-else if ($?JCE_INSTALL_PATH) then
-    set jce_root = "$JCE_INSTALL_PATH"
+    set jce_root = "$JCE_HOME"
 endif
 
 if ("$jce_root" == "") then
-    echo "jce.csh error: set JCE_HOME if JCE is installed at JCE_HOME/install, or set JCE_INSTALL_PATH first."
+    echo "jce.csh error: set JCE_HOME to the root of the JCE installation."
     exit 2
 endif
 
@@ -127,8 +125,8 @@ if ("$jana_cmd" == "") then
         echo "Please either:"
         echo "  1) setenv JANA_HOME /path/to/jana/install"
         echo "     (so JANA_HOME/bin/jana exists), or"
-        echo "  2) add jana to your path, e.g."
-        echo "     set path = ( /path/to/jana/bin \$path )"
+        echo "  2) add jana to your path:"
+        echo '     setenv PATH "/path/to/jana/bin:${PATH}"'
         exit 2
     endif
 endif
