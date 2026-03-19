@@ -1,4 +1,4 @@
-# plugins/
+# src/plugins/
 
 This directory contains all JANA2 plugins in the jana2-common-extensions project. Each subdirectory builds into a self-contained shared library (`.so`) that JANA2 loads at runtime via `JANA_PLUGIN_PATH`.
 
@@ -13,7 +13,7 @@ This directory contains all JANA2 plugins in the jana2-common-extensions project
   - [Step 2 — Write InitPlugin.cc](#step-2--write-initplugincc)
   - [Step 3 — Implement your processor](#step-3--implement-your-processor)
   - [Step 4 — Write the plugin CMakeLists.txt](#step-4--write-the-plugin-cmakeliststxt)
-  - [Step 5 — Register in plugins/CMakeLists.txt](#step-5--register-in-pluginscmakeliststxt)
+  - [Step 5 — Register in the plugins CMakeLists](#step-5--register-in-the-plugins-cmakelists)
   - [Step 6 — Build, install, and run](#step-6--build-install-and-run)
 - [Consuming Hit Types from evio_parser](#consuming-hit-types-from-evio_parser)
 
@@ -21,13 +21,13 @@ This directory contains all JANA2 plugins in the jana2-common-extensions project
 
 ```
 CMakeLists.txt                     ← project root: finds JANA2, EVIO, ROOT
-└── plugins/CMakeLists.txt         ← registers every plugin subdirectory
+└── src/plugins/CMakeLists.txt     ← registers every plugin subdirectory
         ├── add_subdirectory(evio_parser)
         ├── add_subdirectory(evio_processor)
         └── add_subdirectory(my_plugin)    ← the one line you add
 ```
 
-`plugins/CMakeLists.txt` is the **only file outside your own plugin directory** you need to edit. The project-root `CMakeLists.txt` does not change.
+`src/plugins/CMakeLists.txt` is the **only file outside your own plugin directory** you need to edit. The project-root `CMakeLists.txt` does not change.
 
 After installation every `.so` lands under:
 
@@ -45,7 +45,7 @@ After installation every `.so` lands under:
 The minimum layout mirrors `evio_processor/`:
 
 ```
-plugins/my_plugin/
+src/plugins/my_plugin/
 ├── CMakeLists.txt      # shared-library target via add_jana_plugin()
 ├── InitPlugin.cc       # required entry point — JANA2 calls InitPlugin() on load
 ├── MyProcessor.h
@@ -76,7 +76,7 @@ Most new plugins will follow the `evio_processor` pattern exactly: a single `JEv
 ### Step 1 — Create the plugin directory
 
 ```bash
-mkdir plugins/my_plugin
+mkdir -p src/plugins/my_plugin
 ```
 
 ### Step 2 — Write `InitPlugin.cc`
@@ -174,9 +174,9 @@ target_link_libraries(my_plugin
 
 `add_jana_plugin()` handles the install destination automatically — after `cmake --install`, the `.so` appears in `<install_prefix>/lib/plugins/` alongside the other plugins.
 
-### Step 5 — Register in `plugins/CMakeLists.txt`
+### Step 5 — Register in the plugins CMakeLists
 
-Open `plugins/CMakeLists.txt` and add one line:
+Open `src/plugins/CMakeLists.txt` and add one line:
 
 ```cmake
 add_subdirectory(evio_parser)
@@ -198,15 +198,12 @@ cmake --build build --parallel
 cmake --install build
 ```
 
-Load alongside `evio_parser` — it is the event source and must always be included:
+Load the plugin using [jce.csh](../../scripts/jce.csh)
 
 ```bash
-setenv JANA_PLUGIN_PATH ./install/lib/plugins
 
-jana -Pplugins=evio_parser,my_plugin /path/to/data.evio
+scripts/jce.csh -Pplugins=my_plugin /path/to/data.evio
 ```
-
-Omitting `evio_parser` from `-Pplugins` means no EVIO file will be read and your processor will receive no events.
 
 ---
 

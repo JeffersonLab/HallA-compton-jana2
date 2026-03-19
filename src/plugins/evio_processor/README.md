@@ -134,27 +134,22 @@ All parameters are set on the JANA2 command line with `-P<name>=<value>`.
 
 ## Example Usage
 
-### Minimal — default output filenames
+Using [scripts/jce.csh](../../../README.md#basic-usage):
 
 ```bash
-export JANA_PLUGIN_PATH=./install/lib/plugins
-
-jana -Pplugins=evio_parser,evio_processor \
-     data.evio
+scripts/jce.csh -Pplugins=evio_processor data.evio
 ```
 
-Produces `evio_parser.root` and `evio_parser_hits.txt` in the current directory.
+Produces `evio_processor.root` and `evio_processor_hits.txt` in the current directory.
 
 ### Custom ROOT output filename
 
 ```bash
-jana -Pplugins=evio_parser,evio_processor -PROOT_OUT_FILENAME=run_042.root data.evio
+scripts/jce.csh -Pplugins=evio_processor -PROOT_OUT_FILENAME=run_042.root data.evio
 ```
 
 ### With filtering and custom mapping
 
 ```bash
-jana -Pplugins=evio_parser,evio_processor -PFILTER:ENABLE=1 -PFILTER:FILE=config/filter.db -PBANKMAP:FILE=config/mapping.db -PROOT_OUT_FILENAME=run_042_filtered.root data.evio
+scripts/jce.csh -Pplugins=evio_processor -PFILTER:ENABLE=1 -PFILTER:FILE=config/filter.db -PBANKMAP:FILE=config/mapping.db -PROOT_OUT_FILENAME=run_042_filtered.root data.evio
 ```
-
-> These examples use `jana` directly. If you are using the [jce.csh](../../README.md#basic-usage) wrapper, the same parameters can be passed through it.
