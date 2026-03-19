@@ -72,7 +72,7 @@ No additional services or parsers are registered by this plugin — it relies en
 
 ## Output Files
 
-### ROOT file (`evio_parser.root` by default)
+### ROOT file (`evio_processor.root` by default)
 
 | Object | Class | Description |
 |---|---|---|
@@ -81,7 +81,7 @@ No additional services or parsers are registered by this plugin — it relies en
 | `m_tree` | `TTree` | Helicity decoder data |
 | `h_integral` | `TH1I` | Distribution of `FADC250PulseHit::integral_sum` values |
 
-### Text file (`evio_parser_hits.txt` by default)
+### Text file (`evio_processor_hits.txt` by default)
 
 Human-readable per-event dump. Each event block lists counts and field values for every hit type present. Events with no hits at all are omitted.
 
@@ -127,39 +127,29 @@ All parameters are set on the JANA2 command line with `-P<name>=<value>`.
 
 | Parameter | Default | `is_shared` | Description |
 |---|---|---|---|
-| `ROOT_OUT_FILENAME` | `evio_parser.root` | yes | Path/name of the ROOT output file |
-| `TXT_OUT_FILENAME` | `evio_parser_hits.txt` | yes | Path/name of the text hit-summary file |
+| `ROOT_OUT_FILENAME` | `evio_processor.root` | yes | Path/name of the ROOT output file |
+| `TXT_OUT_FILENAME` | `evio_processor_hits.txt` | yes | Path/name of the text hit-summary file |
 
 ---
 
 ## Example Usage
 
-### Minimal — default output filenames
+Using [scripts/jce.csh](../../../README.md#basic-usage):
 
 ```bash
-export JANA_PLUGIN_PATH=./install/lib/plugins
-
-jana -Pplugins=evio_parser,evio_processor \
-     data.evio
+scripts/jce.csh -Pplugins=evio_processor data.evio
 ```
 
-Produces `evio_parser.root` and `evio_parser_hits.txt` in the current directory.
+Produces `evio_processor.root` and `evio_processor_hits.txt` in the current directory.
 
 ### Custom ROOT output filename
 
 ```bash
-jana -Pplugins=evio_parser,evio_processor \
-     -PROOT_OUT_FILENAME=run_042.root \
-     data.evio
+scripts/jce.csh -Pplugins=evio_processor -PROOT_OUT_FILENAME=run_042.root data.evio
 ```
 
 ### With filtering and custom mapping
 
 ```bash
-jana -Pplugins=evio_parser,evio_processor \
-     -PFILTER:ENABLE=1 \
-     -PFILTER:FILE=config/filter.db \
-     -PBANKMAP:FILE=config/mapping.db \
-     -PROOT_OUT_FILENAME=run_042_filtered.root \
-     data.evio
+scripts/jce.csh -Pplugins=evio_processor -PFILTER:ENABLE=1 -PFILTER:FILE=config/filter.db -PBANKMAP:FILE=config/mapping.db -PROOT_OUT_FILENAME=run_042_filtered.root data.evio
 ```

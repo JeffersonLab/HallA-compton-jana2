@@ -2,29 +2,30 @@
 # CMake configuration for evio_parser plugin
 #
 
-# Build sub-libraries first (sets PARSER_INCLUDE_DIR, PARSER_PUBLIC_HEADERS,
-# USER_PARSER_INCLUDE_DIRS, USER_PARSER_HEADERS, USER_PARSER_LIBS in this scope)
+# Build sub-libraries first (sets CORE_INCLUDE_DIR, CORE_PUBLIC_HEADERS,
+# MODULE_PARSERS_INCLUDE_DIRS, MODULE_PARSERS_HEADERS, MODULE_PARSERS_LIBS in this scope)
 add_subdirectory(services)
-add_subdirectory(parser)
-add_subdirectory(user_parsers)
+add_subdirectory(core)
+add_subdirectory(module_parsers)
 
 # Build the JANA2 plugin (shared library loaded at runtime via -Pplugins=evio_parser)
 add_jana_plugin(evio_parser
     SOURCES
         InitPlugin.cc
         JEventSource_EVIO.cc
+        module_parsers/InitModuleParsers.cc
     PUBLIC_HEADER
-        ${PARSER_PUBLIC_HEADERS}
-        ${USER_PARSER_HEADERS}
+        ${CORE_PUBLIC_HEADERS}
+        ${MODULE_PARSERS_HEADERS}
 )
 
 target_link_libraries(evio_parser
     PRIVATE
         ${JANA_LIBRARY}
         evio::eviocc
-        parser              # EvioEventParser + data objects
+        core                # EvioEventParser + core data objects
         services            # JEventService_FilterDB, BankToModuleMap, ModuleParsersMap
-        ${USER_PARSER_LIBS} # fadc_parser, fadc_scaler_parser, tiscaler_parser, ...
+        ${MODULE_PARSERS_LIBS} # fadc_parser, fadc_scaler_parser, tiscaler_parser, ...
 )
 
 # ── Exportable INTERFACE target ────────────────────────────────────────────────
@@ -38,7 +39,7 @@ target_link_libraries(evio_parser
 
 add_library(evio_parser_data_types INTERFACE)
 
-foreach(_dir IN LISTS PARSER_INCLUDE_DIR USER_PARSER_INCLUDE_DIRS)
+foreach(_dir IN LISTS CORE_INCLUDE_DIR MODULE_PARSERS_INCLUDE_DIRS)
     target_include_directories(evio_parser_data_types INTERFACE
         $<BUILD_INTERFACE:${_dir}>
     )
@@ -53,12 +54,4 @@ target_include_directories(evio_parser_data_types INTERFACE
 # writes the combined targets file lives in the root CMakeLists.txt.
 install(TARGETS evio_parser_data_types
     EXPORT jana2_common_extensionsTargets
-)
-
-# Each plugin owns its config/ folder.
-# Build: jce_config_path("evio_parser","filter.db") finds plugins/evio_parser/config/filter.db
-# Install: installed to config/${INSTALL_NAMESPACE}/evio_parser/ to match the same call after install.
-install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/config/
-    DESTINATION config/${INSTALL_NAMESPACE}
-    FILES_MATCHING PATTERN "*.db"
 )

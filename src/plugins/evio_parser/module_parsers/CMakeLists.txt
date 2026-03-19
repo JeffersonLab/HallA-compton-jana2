@@ -1,8 +1,8 @@
 #
-# Central configuration for all user parser libraries
+# Central configuration for all module parser libraries
 #
 
-# Add individual user parser subdirectories
+# Add individual module parser subdirectories
 add_subdirectory(FADC)
 add_subdirectory(FADCScaler)
 add_subdirectory(TIScaler)
@@ -10,10 +10,10 @@ add_subdirectory(helicity_decoder)
 add_subdirectory(MPD)
 add_subdirectory(VFTDC)
 
-# Collect all user parser libraries in a single variable that the top-level
+# Collect all module parser libraries in a single variable that the top-level
 # CMakeLists.txt can link against. When adding a new parser library, extend
 # this list here instead of touching the main CMakeLists.txt
-set(USER_PARSER_LIBS
+set(MODULE_PARSERS_LIBS
     fadc_parser
     fadc_scaler_parser
     tiscaler_parser
@@ -23,9 +23,9 @@ set(USER_PARSER_LIBS
     PARENT_SCOPE
 )
 
-# Collect all user parser include directories. When adding a new parser, add its
+# Collect all module parser include directories. When adding a new parser, add its
 # *_INCLUDE_DIR variable here instead of touching the main CMakeLists.txt
-set(USER_PARSER_INCLUDE_DIRS
+set(MODULE_PARSERS_INCLUDE_DIRS
     ${FADC_INCLUDE_DIR}
     ${FADC_SCALER_INCLUDE_DIR}
     ${TISCALER_INCLUDE_DIR}
@@ -35,9 +35,9 @@ set(USER_PARSER_INCLUDE_DIRS
     PARENT_SCOPE
 )
 
-# Collect all user parser public headers. When adding a new parser, add its
+# Collect all module parser public headers. When adding a new parser, add its
 # *_PUBLIC_HEADERS variable here instead of touching the main CMakeLists.txt
-set(USER_PARSER_HEADERS
+set(MODULE_PARSERS_HEADERS
     ${FADC_PUBLIC_HEADERS}
     ${FADC_SCALER_PUBLIC_HEADERS}
     ${TISCALER_PUBLIC_HEADERS}

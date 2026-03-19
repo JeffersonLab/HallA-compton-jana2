@@ -6,7 +6,7 @@ The `evio_parser` plugin is the **data-ingestion layer** of the jana2-common-ext
 2. Decoding hardware-specific banks (FADC250, MPD, VFTDC, scalers, helicity decoder, …) into strongly-typed C++ hit objects.
 3. Splitting EVIO block-level events into individual physics-level child events that downstream processors can consume.
 
-It is **hardware-agnostic at its core** — all detector-specific logic lives in `user_parsers/` and is registered at plugin initialisation time, so adding support for a new module requires no changes to the framework code.
+It is **hardware-agnostic at its core** — all detector-specific logic lives in `module_parsers/` and is registered at plugin initialisation time, so adding support for a new module requires no changes to the framework code.
 
 ---
 
@@ -18,7 +18,7 @@ It is **hardware-agnostic at its core** — all detector-specific logic lives in
 - [Data Objects](#data-objects)
 - [Configuration Parameters](#configuration-parameters)
 - [Environment Variables](#environment-variables)
-- [Adding a New User Parser](#adding-a-new-user-parser)
+- [Adding a New Module Parser](#adding-a-new-module-parser)
 
 ---
 
@@ -48,10 +48,10 @@ Downstream JEventProcessors  (e.g. evio_processor)
 | Component | File(s) | Responsibility |
 |---|---|---|
 | `JEventSource_EVIO` | `JEventSource_EVIO.cc/.h` | Opens the EVIO file; emits one block-level `JEvent` per EVIO event; invokes `EvioEventParser` in `ProcessParallel` |
-| `EvioEventParser` | `parser/EvioEventParser.cc/.h` | Parses the trigger bank and ROC banks; parses each bank using its `ModuleParser` and insert parsed hits into a `PhysicsEvent` object; later inserts the `PhysicsEvent` objects into the block-level `JEvent` |
+| `EvioEventParser` | `core/EvioEventParser.cc/.h` | Parses the trigger bank and ROC banks; parses each bank using its `ModuleParser` and insert parsed hits into a `PhysicsEvent` object; later inserts the `PhysicsEvent` objects into the block-level `JEvent` |
 | `JEventUnfolder_EVIO` | `JEventUnfolder_EVIO.h` | Receives a block-level `JEvent` containing `PhysicsEvent` objects; splits each one into an individual physics-level child `JEvent` and calls `insertHitsIntoEvent` on each |
-| `ModuleParser` (base) | `parser/ModuleParser.h` | Abstract base class all hardware parsers implement |
-| `ModuleParser_FADC` etc. | `user_parsers/*/ModuleParser_*.cc/.h` | Concrete decoders for specific hardware modules; produce `EventHits` objects per event |
+| `ModuleParser` (base) | `core/ModuleParser.h` | Abstract base class all hardware parsers implement |
+| `ModuleParser_FADC` etc. | `module_parsers/*/ModuleParser_*.cc/.h` | Concrete decoders for specific hardware modules; produce `EventHits` objects per event |
 | `JEventService_BankToModuleMap` | `services/JEventService_BankToModuleMap.h` | Loads `mapping.db`; resolves EVIO bank tag → module ID |
 | `JEventService_ModuleParsersMap` | `services/JEventService_ModuleParsersMap.h` | Registry of `ModuleParser*` instances keyed by module ID |
 | `JEventService_FilterDB` | `services/JEventService_FilterDB.cc/.h` | Optional allow-list; gates which ROC IDs and bank tags are decoded |
@@ -59,12 +59,12 @@ Downstream JEventProcessors  (e.g. evio_processor)
 ## Directory Structure
 
 ```
-plugins/evio_parser/
-├── InitPlugin.cc                  # Plugin entry point; registers all components and user parsers
+src/plugins/evio_parser/
+├── InitPlugin.cc                  # Plugin entry point; registers all components and module parsers
 ├── JEventSource_EVIO.cc/.h        # EVIO file event source
 ├── JEventUnfolder_EVIO.h          # Block → physics event unfolder
 │
-├── parser/                        # Generic parsing infrastructure (hardware-agnostic)
+├── core/                          # Generic parsing infrastructure (hardware-agnostic)
 │   ├── EvioEventParser.cc/.h      # Trigger-bank + ROC-bank orchestrator
 │   ├── ModuleParser.h             # Abstract base class for all hardware parsers
 │   └── data_objects/
@@ -78,8 +78,9 @@ plugins/evio_parser/
 │   ├── JEventService_FilterDB.cc/.h
 │   └── JEventService_ModuleParsersMap.h
 │
-└── user_parsers/                  # Hardware-specific parsers (extend here)
-    ├── CMakeLists.txt             # Aggregates USER_PARSER_LIBS for the main build
+└── module_parsers/                  # Hardware-specific parsers (extend here)
+    ├── CMakeLists.txt             # Aggregates MODULE_PARSERS_LIBS for the main build
+    ├── InitModuleParsers.cc       # Central module parser registration function
     ├── FADC/                      # FADC250 waveform + pulse parser
     ├── FADCScaler/                # FADC scaler parser
     ├── TIScaler/                  # TI scaler parser
@@ -90,9 +91,9 @@ plugins/evio_parser/
 
 **Why this layout?**
 
-- `parser/` is the stable, experiment-agnostic kernel. You should rarely need to touch it.
+- `core/` is the stable, experiment-agnostic kernel. You should rarely need to touch it.
 - `services/` are JANA2 singletons that provide shared, thread-safe configuration to all parsers.
-- `user_parsers/` is the extension zone. Each hardware type gets its own subdirectory and static library so that adding or removing a module requires only local changes.
+- `module_parsers/` is the extension zone. Each hardware type gets its own subdirectory and static library so that adding or removing a module requires only local changes.
 
 ---
 
@@ -163,24 +164,22 @@ jana -Pplugins=evio_parser,evio_processor -PBANKMAP:FILE=/path/to/my_mapping.db 
 
 ```bash
 # Example: enable filtering with a custom filter file
-jana -Pplugins=evio_parser,evio_processor \
-     -PFILTER:ENABLE=1 \
-     -PFILTER:FILE=/path/to/my_filter.db \
-     data.evio
+jana -Pplugins=evio_parser,evio_processor -PFILTER:ENABLE=1 -PFILTER:FILE=/path/to/my_filter.db data.evio
 ```
 
----
+
+> These examples use `jana` directly. If you are using the [jce.csh](../../../README.md#basic-usage) wrapper, the same parameters can be passed through it.
 
 ## Environment Variables
 
 | Variable | Description |
 |---|---|
-| `JCE_CONFIG_DIR` | If set, overrides the install-prefix config directory for **all** config files (`mapping.db`, `filter.db`). Takes priority over the installed location. |
+| `JCE_CONFIG_DIR` | If set, overrides the install-prefix config directory for **all** config files (`mapping.db`, `filter.db`, `default_plugins.db`). Takes priority over the installed location. |
 | `JANA_PLUGIN_PATH` | Standard JANA2 variable — colon-separated list of directories searched for plugin `.so` files. |
 
 ```bash
 # Override config directory entirely
-export JCE_CONFIG_DIR=/my/experiment/config
+setenv JCE_CONFIG_DIR /my/experiment/config
 jana -Pplugins=evio_parser,evio_processor data.evio
 ```
 
@@ -191,7 +190,7 @@ Config file resolution order (implemented in `jce_config_paths.h`):
 
 ---
 
-## Adding a New User Parser
+## Adding a New Module Parser
 
 This section is the guide for extending the plugin with support for a new hardware module.
 
@@ -202,13 +201,13 @@ Decide which EVIO bank tag your module produces (e.g. `350`) and assign a unique
 ### Step 2 — Create the directory layout
 
 ```bash
-mkdir -p plugins/evio_parser/user_parsers/MyHW/data_objects
+mkdir -p src/plugins/evio_parser/module_parsers/MyHW/data_objects
 ```
 
-Use `user_parsers/FADC/` as a reference:
+Use `module_parsers/FADC/` as a reference:
 
 ```
-user_parsers/MyHW/
+module_parsers/MyHW/
 ├── CMakeLists.txt
 ├── ModuleParser_MyHW.cc
 ├── ModuleParser_MyHW.h
@@ -224,7 +223,7 @@ In `data_objects/`, create two files:
 - **`MyHWHit.h`** — a plain struct holding the per-hit fields your hardware produces (slot, channel, value, timestamp, etc.).
 - **`EventHits_MyHW.h`** — subclass of `EventHits` that owns a `std::vector<MyHWHit*>` and implements `insertIntoEvent(JEvent&)` by calling `event.Insert(hits)`.
  
-See `user_parsers/FADC/data_objects/` for a concrete reference.
+See `module_parsers/FADC/data_objects/` for a concrete reference.
 
 ### Step 4 — Implement `ModuleParser_MyHW`
  
@@ -235,11 +234,11 @@ Your parser class inherits from `ModuleParser` and overrides `parse()` (signatur
 - Use `getBitsInRange(word, high_bit, low_bit)` for all bit-field extraction.
 - Accumulate hits per event number in a local `std::map<uint64_t, std::shared_ptr<EventHits_MyHW>>`, then push a `new PhysicsEvent(evnum, hits)` per entry into `physics_events`.
  
-See `user_parsers/FADC/ModuleParser_FADC.cc` for a complete worked example.
+See `module_parsers/FADC/ModuleParser_FADC.cc` for a complete worked example.
 
 ### Step 5 — Add a `CMakeLists.txt` for the new parser
 
-**`user_parsers/MyHW/CMakeLists.txt`**:
+**`module_parsers/MyHW/CMakeLists.txt`**:
 
 ```cmake
 add_library(myhw_parser STATIC
@@ -254,7 +253,7 @@ target_include_directories(myhw_parser
 
 target_link_libraries(myhw_parser
     PUBLIC
-        parser   # provides ModuleParser base class and core data objects
+        core   # provides ModuleParser base class and core data objects
 )
 
 set(MYHW_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/data_objects PARENT_SCOPE)
@@ -263,44 +262,44 @@ file(GLOB MYHW_PUBLIC_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/data_objects/*.h)
 set(MYHW_PUBLIC_HEADERS ${MYHW_PUBLIC_HEADERS} PARENT_SCOPE)
 ```
 
-### Step 6 — Register the new parser in `user_parsers/CMakeLists.txt`
+### Step 6 — Register the new parser in `module_parsers/CMakeLists.txt`
 
-Open `plugins/evio_parser/user_parsers/CMakeLists.txt` and add three lines:
+Open `src/plugins/evio_parser/module_parsers/CMakeLists.txt` and add three lines:
 
 ```cmake
 # Add subdirectory
 add_subdirectory(MyHW)
 
-# Extend the library list (inside the set() call for USER_PARSER_LIBS)
-set(USER_PARSER_LIBS
+# Extend the library list (inside the set() call for MODULE_PARSERS_LIBS)
+set(MODULE_PARSERS_LIBS
     ...existing entries...
     myhw_parser          # <-- add this
     PARENT_SCOPE
 )
 
 # Extend include dirs
-set(USER_PARSER_INCLUDE_DIRS
+set(MODULE_PARSERS_INCLUDE_DIRS
     ...existing entries...
     ${MYHW_INCLUDE_DIR}  # <-- add this
     PARENT_SCOPE
 )
 
 # Extend headers
-set(USER_PARSER_HEADERS
+set(MODULE_PARSERS_HEADERS
     ...existing entries...
     ${MYHW_PUBLIC_HEADERS}  # <-- add this
     PARENT_SCOPE
 )
 ```
 
-### Step 7 — Register the parser instance in `InitPlugin.cc`
+### Step 7 — Register the parser instance in `module_parsers/InitModuleParsers.cc`
 
-Open `plugins/evio_parser/InitPlugin.cc` and add:
+Open `src/plugins/evio_parser/module_parsers/InitModuleParsers.cc` and add:
 
 ```cpp
-#include "ModuleParser_MyHW.h"   // at the top
+#include "ModuleParser_MyHW.h"   // at the top (with other parser includes)
 
-// Inside InitPlugin():
+// Inside InitModuleParsers(JApplication* app):
 module_parsers_svc->addParser(350, new ModuleParser_MyHW());
 ```
 
@@ -355,7 +354,7 @@ cmake -S . -B build
 cmake --build build --parallel
 ```
 
-Run on an EVIO file that contains bank `350` and verify that `PhysicsEvent` objects are populated with `MyHWHit` data using instructions given in [Using the Plugins with JANA2](../../README.md#using-the-plugins-with-jana2)
+Run on an EVIO file that contains bank `350` and verify that `PhysicsEvent` objects are populated with `MyHWHit` data using instructions given in [Using the Plugins with JANA2](../../../README.md#basic-usage)
 
 ---
 

@@ -1,4 +1,4 @@
-# plugins/
+# src/plugins/
 
 This directory contains all JANA2 plugins in the jana2-common-extensions project. Each subdirectory builds into a self-contained shared library (`.so`) that JANA2 loads at runtime via `JANA_PLUGIN_PATH`.
 
@@ -13,7 +13,7 @@ This directory contains all JANA2 plugins in the jana2-common-extensions project
   - [Step 2 — Write InitPlugin.cc](#step-2--write-initplugincc)
   - [Step 3 — Implement your processor](#step-3--implement-your-processor)
   - [Step 4 — Write the plugin CMakeLists.txt](#step-4--write-the-plugin-cmakeliststxt)
-  - [Step 5 — Register in plugins/CMakeLists.txt](#step-5--register-in-pluginscmakeliststxt)
+  - [Step 5 — Register in the plugins CMakeLists](#step-5--register-in-the-plugins-cmakelists)
   - [Step 6 — Build, install, and run](#step-6--build-install-and-run)
 - [Consuming Hit Types from evio_parser](#consuming-hit-types-from-evio_parser)
 
@@ -21,13 +21,13 @@ This directory contains all JANA2 plugins in the jana2-common-extensions project
 
 ```
 CMakeLists.txt                     ← project root: finds JANA2, EVIO, ROOT
-└── plugins/CMakeLists.txt         ← registers every plugin subdirectory
+└── src/plugins/CMakeLists.txt     ← registers every plugin subdirectory
         ├── add_subdirectory(evio_parser)
         ├── add_subdirectory(evio_processor)
         └── add_subdirectory(my_plugin)    ← the one line you add
 ```
 
-`plugins/CMakeLists.txt` is the **only file outside your own plugin directory** you need to edit. The project-root `CMakeLists.txt` does not change.
+`src/plugins/CMakeLists.txt` is the **only file outside your own plugin directory** you need to edit. The project-root `CMakeLists.txt` does not change.
 
 After installation every `.so` lands under:
 
@@ -45,7 +45,7 @@ After installation every `.so` lands under:
 The minimum layout mirrors `evio_processor/`:
 
 ```
-plugins/my_plugin/
+src/plugins/my_plugin/
 ├── CMakeLists.txt      # shared-library target via add_jana_plugin()
 ├── InitPlugin.cc       # required entry point — JANA2 calls InitPlugin() on load
 ├── MyProcessor.h
@@ -76,7 +76,7 @@ Most new plugins will follow the `evio_processor` pattern exactly: a single `JEv
 ### Step 1 — Create the plugin directory
 
 ```bash
-mkdir plugins/my_plugin
+mkdir -p src/plugins/my_plugin
 ```
 
 ### Step 2 — Write `InitPlugin.cc`
@@ -174,9 +174,9 @@ target_link_libraries(my_plugin
 
 `add_jana_plugin()` handles the install destination automatically — after `cmake --install`, the `.so` appears in `<install_prefix>/lib/plugins/` alongside the other plugins.
 
-### Step 5 — Register in `plugins/CMakeLists.txt`
+### Step 5 — Register in the plugins CMakeLists
 
-Open `plugins/CMakeLists.txt` and add one line:
+Open `src/plugins/CMakeLists.txt` and add one line:
 
 ```cmake
 add_subdirectory(evio_parser)
@@ -192,21 +192,18 @@ That is the only change required outside your own plugin directory.
 # Reconfigure to pick up the new subdirectory
 cmake -S . -B build \
   -DCMAKE_PREFIX_PATH="<path/to/JANA2>;<path/to/evio>;<path/to/ROOT>" \
-  -DCMAKE_INSTALL_PREFIX=./install
+  -DCMAKE_INSTALL_PREFIX=`pwd`
 
 cmake --build build --parallel
 cmake --install build
 ```
 
-Load alongside `evio_parser` — it is the event source and must always be included:
+Load the plugin using [jce.csh](../../scripts/jce.csh)
 
 ```bash
-setenv JANA_PLUGIN_PATH ./install/lib/plugins
 
-jana -Pplugins=evio_parser,my_plugin /path/to/data.evio
+scripts/jce.csh -Pplugins=my_plugin /path/to/data.evio
 ```
-
-Omitting `evio_parser` from `-Pplugins` means no EVIO file will be read and your processor will receive no events.
 
 ---
 
@@ -214,4 +211,4 @@ Omitting `evio_parser` from `-Pplugins` means no EVIO file will be read and your
 
 Linking against `evio_parser_data_types` (as shown in Step 4) gives your plugin access to every hit-class header without any manual `include_directories` entries.
 
-If you add a new hardware module to `evio_parser` (see [evio_parser/README.md → Adding a New User Parser](evio_parser/README.md#adding-a-new-user-parser)), its hit type becomes available to any plugin linking `evio_parser_data_types` automatically — no changes to this directory are needed.
+If you add a new hardware module to `evio_parser` (see [evio_parser/README.md → Adding a New Module Parser](evio_parser/README.md#adding-a-new-module-parser)), its hit type becomes available to any plugin linking `evio_parser_data_types` automatically — no changes to this directory are needed.

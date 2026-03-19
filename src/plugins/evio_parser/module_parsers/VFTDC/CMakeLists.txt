@@ -1,5 +1,5 @@
 #
-# CMake configuration for VFTDC user parsers
+# CMake configuration for VFTDC module parsers
 #
 
 # Library containing VFTDC module parser implementation
@@ -16,7 +16,7 @@ target_include_directories(vftdc_parser
 # Link against core parser to get classes from which parser classes inherit
 target_link_libraries(vftdc_parser
     PUBLIC
-        parser
+        core
 )
 
 set(VFTDC_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/data_objects PARENT_SCOPE)

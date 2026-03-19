@@ -16,9 +16,11 @@ find_package(evio REQUIRED)
 find_package(ROOT REQUIRED COMPONENTS Core RIO Tree Hist)
 
 # Add subdirectories
+add_subdirectory(config)
+add_subdirectory(scripts)
 add_subdirectory(templates)
-#add_subdirectory(libraries)
-add_subdirectory(plugins)
+#add_subdirectory(src/libraries)
+add_subdirectory(src/plugins)
 
 # ── Unified package export ─────────────────────────────────────────────────────
 # All install(TARGETS ... EXPORT jana2_common_extensionsTargets) calls across
