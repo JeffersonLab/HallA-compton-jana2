@@ -13,6 +13,7 @@ add_jana_plugin(evio_parser
     SOURCES
         InitPlugin.cc
         JEventSource_EVIO.cc
+        module_parsers/InitModuleParsers.cc
     PUBLIC_HEADER
         ${CORE_PUBLIC_HEADERS}
         ${MODULE_PARSERS_HEADERS}
