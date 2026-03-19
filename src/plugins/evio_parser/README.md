@@ -80,6 +80,7 @@ src/plugins/evio_parser/
 │
 └── module_parsers/                  # Hardware-specific parsers (extend here)
     ├── CMakeLists.txt             # Aggregates MODULE_PARSERS_LIBS for the main build
+    ├── InitModuleParsers.cc       # Central module parser registration function
     ├── FADC/                      # FADC250 waveform + pulse parser
     ├── FADCScaler/                # FADC scaler parser
     ├── TIScaler/                  # TI scaler parser
@@ -291,14 +292,14 @@ set(MODULE_PARSERS_HEADERS
 )
 ```
 
-### Step 7 — Register the parser instance in `InitPlugin.cc`
+### Step 7 — Register the parser instance in `module_parsers/InitModuleParsers.cc`
 
-Open `src/plugins/evio_parser/InitPlugin.cc` and add:
+Open `src/plugins/evio_parser/module_parsers/InitModuleParsers.cc` and add:
 
 ```cpp
-#include "ModuleParser_MyHW.h"   // at the top
+#include "ModuleParser_MyHW.h"   // at the top (with other parser includes)
 
-// Inside InitPlugin():
+// Inside InitModuleParsers(JApplication* app):
 module_parsers_svc->addParser(350, new ModuleParser_MyHW());
 ```
 
