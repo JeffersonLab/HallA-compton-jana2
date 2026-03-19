@@ -1,5 +1,5 @@
 #
-# CMake configuration for FADC scaler user parsers
+# CMake configuration for FADC scaler module parsers
 #
 
 # Library containing FADC scaler module parser implementation
@@ -16,7 +16,7 @@ target_include_directories(fadc_scaler_parser
 # Link against core parser library
 target_link_libraries(fadc_scaler_parser
     PUBLIC
-       parser
+       core
 )
 
 set(FADC_SCALER_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/data_objects PARENT_SCOPE)

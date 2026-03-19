@@ -1,5 +1,5 @@
 #
-# CMake configuration for helicity decoder user parsers
+# CMake configuration for helicity decoder module parsers
 #
 
 # Library containing helicity decoder module parser implementation
@@ -16,7 +16,7 @@ target_include_directories(helicity_decoder_parsers
 # Link against core parser to get classes from which parser classes inherit
 target_link_libraries(helicity_decoder_parsers
     PUBLIC
-        parser
+        core
 )
 
 set(HELDEC_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/data_objects PARENT_SCOPE)

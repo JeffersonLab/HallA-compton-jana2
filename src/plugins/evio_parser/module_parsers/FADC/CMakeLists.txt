@@ -1,5 +1,5 @@
 #
-# CMake configuration for FADC user parsers
+# CMake configuration for FADC module parsers
 #
 
 # Library containing FADC250 module parser implementation
@@ -16,7 +16,7 @@ target_include_directories(fadc_parser
 # Link against core parser to get classes from which parser classes inherit
 target_link_libraries(fadc_parser
     PUBLIC
-        parser
+        core
 )
 
 set(FADC_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/data_objects PARENT_SCOPE)

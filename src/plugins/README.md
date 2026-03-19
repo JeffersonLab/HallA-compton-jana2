@@ -192,7 +192,7 @@ That is the only change required outside your own plugin directory.
 # Reconfigure to pick up the new subdirectory
 cmake -S . -B build \
   -DCMAKE_PREFIX_PATH="<path/to/JANA2>;<path/to/evio>;<path/to/ROOT>" \
-  -DCMAKE_INSTALL_PREFIX=./install
+  -DCMAKE_INSTALL_PREFIX=`pwd`
 
 cmake --build build --parallel
 cmake --install build
@@ -211,4 +211,4 @@ scripts/jce.csh -Pplugins=my_plugin /path/to/data.evio
 
 Linking against `evio_parser_data_types` (as shown in Step 4) gives your plugin access to every hit-class header without any manual `include_directories` entries.
 
-If you add a new hardware module to `evio_parser` (see [evio_parser/README.md → Adding a New User Parser](evio_parser/README.md#adding-a-new-user-parser)), its hit type becomes available to any plugin linking `evio_parser_data_types` automatically — no changes to this directory are needed.
+If you add a new hardware module to `evio_parser` (see [evio_parser/README.md → Adding a New Module Parser](evio_parser/README.md#adding-a-new-module-parser)), its hit type becomes available to any plugin linking `evio_parser_data_types` automatically — no changes to this directory are needed.
