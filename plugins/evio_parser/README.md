@@ -163,24 +163,22 @@ jana -Pplugins=evio_parser,evio_processor -PBANKMAP:FILE=/path/to/my_mapping.db 
 
 ```bash
 # Example: enable filtering with a custom filter file
-jana -Pplugins=evio_parser,evio_processor \
-     -PFILTER:ENABLE=1 \
-     -PFILTER:FILE=/path/to/my_filter.db \
-     data.evio
+jana -Pplugins=evio_parser,evio_processor -PFILTER:ENABLE=1 -PFILTER:FILE=/path/to/my_filter.db data.evio
 ```
 
----
+
+> These examples use `jana` directly. If you are using the [jce.csh](../../README.md#basic-usage) wrapper, the same parameters can be passed through it.
 
 ## Environment Variables
 
 | Variable | Description |
 |---|---|
-| `JCE_CONFIG_DIR` | If set, overrides the install-prefix config directory for **all** config files (`mapping.db`, `filter.db`). Takes priority over the installed location. |
+| `JCE_CONFIG_DIR` | If set, overrides the install-prefix config directory for **all** config files (`mapping.db`, `filter.db`, `default_plugins.db`). Takes priority over the installed location. |
 | `JANA_PLUGIN_PATH` | Standard JANA2 variable — colon-separated list of directories searched for plugin `.so` files. |
 
 ```bash
 # Override config directory entirely
-export JCE_CONFIG_DIR=/my/experiment/config
+setenv JCE_CONFIG_DIR /my/experiment/config
 jana -Pplugins=evio_parser,evio_processor data.evio
 ```
 
