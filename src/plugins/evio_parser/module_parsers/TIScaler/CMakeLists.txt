@@ -1,5 +1,5 @@
 #
-# CMake configuration for TI scaler user parsers
+# CMake configuration for TI scaler module parsers
 #
 
 # Library containing TI scaler module parser implementation
@@ -16,7 +16,7 @@ target_include_directories(tiscaler_parser
 # Link against core parser library
 target_link_libraries(tiscaler_parser
     PUBLIC
-        parser
+        core
 )
 
 set(TISCALER_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/data_objects PARENT_SCOPE)

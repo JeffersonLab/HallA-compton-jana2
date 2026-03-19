@@ -13,7 +13,6 @@ This repository is designed to be **modular and extensible**, and can be adapted
 * [Basic Usage](#basic-usage)
 * [Configuration Files](#configuration-files)
 * [Default Plugins](#default-plugins)
-* [Plugin Documentation](#plugin-documentation)
 
 
 ## Dependencies
@@ -55,16 +54,15 @@ Follow the official installation guide:
 
 ## Build Instructions
 
-> ⚠️ **Important**
-> `CMAKE_INSTALL_PREFIX` must be set during the **initial CMake configuration**.
-> It is embedded into generated headers (e.g., `jce_config_paths.h`) and used at runtime to locate configuration files such as `mapping.db` and `filter.db`.
-> Changing it later without reconfiguring will result in incorrect paths.
-
 ### 1. Configure
 
 ```tcsh
 cmake -S . -B build -DCMAKE_PREFIX_PATH="/path/to/JANA2;/path/to/evio;/path/to/root" -DCMAKE_INSTALL_PREFIX=`pwd`
 ```
+> ⚠️ **Important**
+> `CMAKE_INSTALL_PREFIX` must be set during the **initial CMake configuration**.
+> It is embedded into generated headers (e.g., `jce_config_paths.h`) and used at runtime to locate configuration files such as `mapping.db` and `filter.db`.
+> Changing it later without reconfiguring will result in incorrect paths.
 
 ### 2. Build
 
@@ -80,25 +78,24 @@ cmake --install build
 
 ## Installation Layout
 
-After installation, your directory will look like:
+After installation (with `-DCMAKE_INSTALL_PREFIX=\`pwd\``), your directory will look like:
 
 ```
-install/
-├── config/
-│   ├── mapping.db
-│   ├── filter.db
-│   └── default_plugins.db
-├── include/
-│   └── jce_config_paths.h
-├── lib/
-│   ├── cmake/
-│   └── plugins/
-│       ├── evio_parser.so
-│       ├── evio_processor.so
-│       └── ...
-├── scripts/
-│   └── jce.csh
-└── templates/
+config/
+├── mapping.db
+├── filter.db
+└── default_plugins.db
+include/
+└── jce_config_paths.h
+lib/
+├── cmake/
+└── plugins/
+    ├── evio_parser.so
+    ├── evio_processor.so
+    └── ...
+scripts/
+└── jce.csh
+templates/
 ```
 
 ## Basic Usage
@@ -119,10 +116,10 @@ This script:
 
 ```tcsh
 setenv JCE_HOME /path/to/jana2-common-extensions
-setenv JANA_HOME /path/to/JANA2/install
+setenv JANA_HOME /path/to/JANA2
 ```
 
-> `JCE_HOME` should point to the project root (the script uses `${JCE_HOME}/install` internally).
+> With the default setup (`-DCMAKE_INSTALL_PREFIX=\`pwd\``), set `JCE_HOME` to the project root.
 
 ### Run with Default Plugins
 
@@ -142,7 +139,7 @@ ${JCE_HOME}/scripts/jce.csh -Pplugins=evio_processor,my_custom_plugin /path/to/d
 
 ### Using Plugins from External Directories
 
-If your plugin is not located in `${JCE_HOME}/install/lib/plugins`, you must provide its path manually.
+If your plugin is not located in `${JCE_HOME}/lib/plugins`, you must provide its path manually.
 
 You can:
 
@@ -181,7 +178,7 @@ Configuration files are installed under:
 
 ```
 <install_prefix>/config/
-````
+```
 
 | File                 | Purpose                           | Used By                |
 |----------------------|-----------------------------------|------------------------|
@@ -202,7 +199,7 @@ The `evio_parser` plugin loads `mapping.db` and `filter.db` from <install_prefix
 ```tcsh
 -PBANKMAP:FILE=/custom/mapping.db
 -PFILTER:FILE=/custom/filter.db
-````
+```
 
 Similarly, the default plugins file path can be overridden with:
 
