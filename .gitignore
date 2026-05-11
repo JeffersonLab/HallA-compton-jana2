@@ -2,3 +2,10 @@
 *.txt
 data/*
 data
+*.d
+*.so
+*.pcm
+Rootfiles
+.*
+!.gitignore
+build
