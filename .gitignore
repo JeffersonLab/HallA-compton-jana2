@@ -9,3 +9,6 @@ Rootfiles
 .*
 !.gitignore
 build
+scripts/Makefile
+scripts/plot_waveform
+

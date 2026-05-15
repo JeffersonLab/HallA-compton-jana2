@@ -159,3 +159,20 @@ void plot_waveform_rdf(const char* input_file = "waveform_tree.root",
     fout->Close();
     std::cout << "Saved plots to " << output_file << std::endl;
 }
+
+int main(int argc, char** argv)
+{
+    const char* input_file  = argc > 1 ? argv[1] : "waveform_tree.root";
+    const char* output_file = argc > 2 ? argv[2] : "waveform_plots.root";
+
+    Long64_t evt_start = argc > 3 ? std::atoll(argv[3]) : 0;
+    Long64_t evt_end   = argc > 4 ? std::atoll(argv[4]) : -1;
+
+    std::cout << "Input file:  " << input_file << std::endl;
+    std::cout << "Output file: " << output_file << std::endl;
+    std::cout << "Event range: " << evt_start << " to " << evt_end << std::endl;
+
+    plot_waveform_rdf(input_file, output_file, evt_start, evt_end);
+
+    return 0;
+}
