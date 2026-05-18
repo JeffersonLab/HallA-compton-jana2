@@ -9,6 +9,7 @@ Rootfiles
 .*
 !.gitignore
 build
-scripts/Makefile
 scripts/plot_waveform
 !CMakeLists.txt
+raw
+sourceme.sh
