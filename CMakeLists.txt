@@ -11,7 +11,6 @@ set(INSTALL_NAMESPACE "" CACHE STRING
     "Subdirectory namespace used in all install paths (include/, lib/cmake/, config/, etc.)" FORCE)
 
 # Find dependencies
-find_package(JANA REQUIRED)
 find_package(jana2_common_extensions REQUIRED)
 find_package(ROOT REQUIRED COMPONENTS Core RIO Tree Hist)
 

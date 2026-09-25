@@ -12,6 +12,7 @@ JEventProcessor_compton::JEventProcessor_compton() {
     SetCallbackStyle(CallbackStyle::ExpertMode);  // Use expert mode for full control
 
     // All of these are optional because not all events will have these hits
+    m_caen1190_hits_in.SetOptional(true);
     m_fadc_scaler_hits_in.SetOptional(true);
     m_pulse_hits_in.SetOptional(true);
     m_waveform_hits_in.SetOptional(true);
@@ -22,6 +23,8 @@ JEventProcessor_compton::JEventProcessor_compton() {
     m_hallb_pulse_integral_hits_in.SetOptional(true);
     m_hallb_pulse_time_hits_in.SetOptional(true);
     m_hallb_pulse_peak_hits_in.SetOptional(true);
+    m_faV3compton_hits_in.SetOptional(true);
+    m_faV3comptonAccumulator_hits_in.SetOptional(true);
 }
 
 /**
@@ -47,6 +50,7 @@ void JEventProcessor_compton::Init() {
     m_waveform_tree->Branch("slot", &ev_slot);
     m_waveform_tree->Branch("chan", &ev_chan);
     m_waveform_tree->Branch("waveform", &ev_waveform);
+    m_waveform_tree->Branch("rocid", &ev_rocid);
 
     // Create ROOT tree for pulse data
     m_pulse_tree = new TTree("pulse_tree","FADC250 pulse data(slow, channel, integral, time)");
@@ -59,6 +63,21 @@ void JEventProcessor_compton::Init() {
     m_pulse_tree->Branch("nhits",&number_hit);
     m_pulse_tree->Branch("chan",&ev_pulse_chan);
     m_pulse_tree->Branch("slot",&ev_pulse_slot);
+    m_pulse_tree->Branch("rocid", &ev_pulse_rocid);
+
+    // Create ROOT tree for CAEN1190 data
+    m_caen1190_tree = new TTree("caen1190_tree","CAEN1190 data (slot, channel, time)");
+    m_caen1190_tree->Branch("rocid", &ev_caen_rocid);
+    m_caen1190_tree->Branch("slot", &ev_caen_slot);
+    m_caen1190_tree->Branch("chan", &ev_caen_chan);
+    m_caen1190_tree->Branch("measurement", &ev_caen_measurement);
+    m_caen1190_tree->Branch("opt", &ev_caen_opt);
+    m_caen1190_tree->Branch("flags", &ev_caen_flags);
+    m_caen1190_tree->Branch("trig_time", &ev_caen_trig_time);
+    m_caen1190_tree->Branch("hdr_chip_id", &ev_caen_hdr_chip_id);
+    m_caen1190_tree->Branch("hdr_event_id", &ev_caen_hdr_event_id);
+    m_caen1190_tree->Branch("hdr_bunch_id", &ev_caen_hdr_bunch_id);
+    m_caen1190_tree->Branch("trl_status", &ev_caen_trl_status);
 
     // Create the Helicity Decoder Tree
     m_tree = new TTree("m_tree", "Physics Event Tree");
@@ -87,6 +106,31 @@ void JEventProcessor_compton::Init() {
         "last32wins_pattsync_hel/i"
     );
 
+    // faV3 compton tree
+    compton_tree = new TTree("compton_tree", "compton tree");
+    compton_tree->Branch("event_number", &comp_trigger_num);
+    compton_tree->Branch("trig_timestamp1", &comp_timestamp1);
+    compton_tree->Branch("trig_timestamp2", &comp_timestamp2);
+    compton_tree->Branch("rocid", &comp_rocid);
+    compton_tree->Branch("slot", &comp_slot);
+    compton_tree->Branch("moduleid", &comp_module_id);
+
+    compton_tree->Branch("acc_samp_overflow", &acc_samp_overflow);
+    compton_tree->Branch("acc_samp_underflow", &acc_samp_underflow);
+    compton_tree->Branch("acc_type", &acc_type);
+    compton_tree->Branch("acc_chan", &acc_chan);
+    compton_tree->Branch("acc_overflow_timestamp1", &acc_overflow_timestamp1);
+    compton_tree->Branch("acc_overflow_timestamp2", &acc_overflow_timestamp2);
+    compton_tree->Branch("acc_underflow_timestamp1", &acc_underflow_timestamp1);
+    compton_tree->Branch("acc_underflow_timestamp2", &acc_underflow_timestamp2);
+    compton_tree->Branch("acc_sum_nsample1", &acc_sum_nsample1);
+    compton_tree->Branch("acc_sum_nsample2", &acc_sum_nsample2);
+    compton_tree->Branch("acc_sum1", &acc_sum1);
+    compton_tree->Branch("acc_sum2", &acc_sum2);
+    compton_tree->Branch("acc_np_nsboverlapped", &acc_np_nsboverlapped);
+    compton_tree->Branch("acc_np_nonsa", &acc_np_nonsa);
+    compton_tree->Branch("acc_np_miss", &acc_np_miss);
+
     // Optionally: Text output file for human-readable hit summaries
     m_txt_output_file.open(m_txt_output_filename().c_str());
 
@@ -110,27 +154,61 @@ void JEventProcessor_compton::ProcessSequential(const JEvent &event) {
     ev_slot.clear();
     ev_chan.clear();
     ev_waveform.clear();
+    ev_rocid.clear();
     ev_coarse_time.clear();
     ev_pulse_chan.clear();
     ev_pulse_slot.clear();
     ev_fine_time.clear();
     ev_integral_sum.clear();
     ev_pulse_peak.clear();
+    ev_pulse_rocid.clear();
     pedestal_sum= 0;
     pedestal_quality = 0;
     number_hit =0;
+
+    // Clear previous event data - CAEN1190
+    ev_caen_rocid.clear();
+    ev_caen_slot.clear();
+    ev_caen_chan.clear();
+    ev_caen_measurement.clear();
+    ev_caen_opt.clear();
+    ev_caen_flags.clear();
+    ev_caen_trig_time.clear();
+    ev_caen_hdr_chip_id.clear();
+    ev_caen_hdr_event_id.clear();
+    ev_caen_hdr_bunch_id.clear();
+    ev_caen_trl_status.clear();
+
+    // CAEN1190 TDC hits
+    for (const auto& caen_hit : m_caen1190_hits_in()) {
+        ev_caen_rocid.push_back(caen_hit->rocid);
+        ev_caen_slot.push_back(caen_hit->slot);
+        ev_caen_chan.push_back(caen_hit->chan);
+        ev_caen_measurement.push_back(caen_hit->measurement);
+        ev_caen_opt.push_back(caen_hit->opt);
+        ev_caen_flags.push_back(caen_hit->flags);
+        ev_caen_trig_time.push_back(caen_hit->trig_time);
+        ev_caen_hdr_chip_id.push_back(caen_hit->hdr_chip_id);
+        ev_caen_hdr_event_id.push_back(caen_hit->hdr_event_id);
+        ev_caen_hdr_bunch_id.push_back(caen_hit->hdr_bunch_id);
+        ev_caen_trl_status.push_back(caen_hit->glb_trl_status);
+
+    }
+    m_caen1190_tree->Fill();
 
     // FADC250 waveform hits
     for (const auto& waveform_hit : m_waveform_hits_in()) {
         // Fill ROOT tree with waveform data
         m_waveform_tree_row.slot = waveform_hit->slot;
         m_waveform_tree_row.chan = waveform_hit->chan;
+        m_waveform_tree_row.rocid = waveform_hit->rocid;
         m_waveform_tree_row.waveform = waveform_hit->waveform;
 
 	size_t waveform_sample_number = m_waveform_tree_row.waveform.size();
 
 	ev_slot.insert(ev_slot.end(), waveform_sample_number, m_waveform_tree_row.slot);
 	ev_chan.insert(ev_chan.end(), waveform_sample_number, m_waveform_tree_row.chan);
+        ev_rocid.insert(ev_rocid.end(), waveform_sample_number, m_waveform_tree_row.rocid);
 	ev_waveform.insert(ev_waveform.end(),  m_waveform_tree_row.waveform.begin(), m_waveform_tree_row.waveform.end());
     }
 
@@ -152,10 +230,12 @@ void JEventProcessor_compton::ProcessSequential(const JEvent &event) {
             ev_pulse_peak.push_back(pulse_peak);
             ev_pulse_slot.push_back(pulse_hit->slot);
             ev_pulse_chan.push_back(pulse_hit->chan);
+            ev_pulse_rocid.push_back(pulse_hit->rocid);
         }
        
         
     }
+
     number_hit = nn;
     m_waveform_tree->Fill();
     if(nn>0){
@@ -195,10 +275,55 @@ void JEventProcessor_compton::ProcessSequential(const JEvent &event) {
         m_tree->Fill();
     }
 
+    for(const auto& compton_evt : m_faV3compton_hits_in()){
+        comp_trigger_num = compton_evt->trigger_num;
+	comp_timestamp1 = compton_evt->timestamp1;
+	comp_timestamp2 = compton_evt->timestamp2;
+        comp_rocid = compton_evt->rocid;
+	comp_slot = compton_evt->slot;
+	comp_module_id = compton_evt->module_id;
+    }
+
+    acc_samp_overflow.clear();
+    acc_samp_underflow.clear();
+    acc_type.clear();
+    acc_chan.clear();
+    acc_overflow_timestamp1.clear();
+    acc_overflow_timestamp2.clear();
+    acc_underflow_timestamp1.clear();
+    acc_underflow_timestamp2.clear();
+    acc_sum_nsample1.clear();
+    acc_sum_nsample2.clear();
+    acc_sum1.clear();
+    acc_sum2.clear();
+    acc_np_nsboverlapped.clear();
+    acc_np_nonsa.clear();
+    acc_np_miss.clear();
+    for(const auto& compton_accum : m_faV3comptonAccumulator_hits_in()){
+        acc_samp_overflow.push_back(compton_accum->acc_samp_overflow);
+        acc_samp_underflow.push_back(compton_accum->acc_samp_underflow);
+	acc_type.push_back(compton_accum->acc_type);
+	acc_chan.push_back(compton_accum->acc_chan);
+	acc_overflow_timestamp1.push_back(compton_accum->acc_overflow_timestamp1);
+	acc_overflow_timestamp2.push_back(compton_accum->acc_overflow_timestamp2);
+	acc_underflow_timestamp1.push_back(compton_accum->acc_underflow_timestamp1);
+	acc_underflow_timestamp2.push_back(compton_accum->acc_underflow_timestamp2);
+	acc_sum_nsample1.push_back(compton_accum->acc_sum_nsample1);
+	acc_sum_nsample2.push_back(compton_accum->acc_sum_nsample2);
+	acc_sum1.push_back(compton_accum->acc_sum1);
+	acc_sum2.push_back(compton_accum->acc_sum2);
+	acc_np_nsboverlapped.push_back(compton_accum->acc_np_nsboverlapped);
+	acc_np_nonsa.push_back(compton_accum->acc_np_nonsa);
+	acc_np_miss.push_back(compton_accum->acc_np_miss);
+    }
+
+    compton_tree->Fill();
+
     // ------------------------------------------------------------------
     // Optional text dump of hits for this event (waveforms, pulses, scalers)
     // ------------------------------------------------------------------
     if (m_txt_output_file.is_open()) {
+        const auto& caen1190_hits            = m_caen1190_hits_in();
         const auto& waveform_hits            = m_waveform_hits_in();
         const auto& pulse_hits               = m_pulse_hits_in();
         const auto& fadc_scaler_hits         = m_fadc_scaler_hits_in();
@@ -208,7 +333,9 @@ void JEventProcessor_compton::ProcessSequential(const JEvent &event) {
         const auto& hallb_pulse_integral_hits = m_hallb_pulse_integral_hits_in();
         const auto& hallb_pulse_time_hits    = m_hallb_pulse_time_hits_in();
         const auto& hallb_pulse_peak_hits    = m_hallb_pulse_peak_hits_in();
+        const auto& faV3compton_hits    = m_faV3compton_hits_in();
 
+        bool have_caen1190_hits          = !caen1190_hits.empty();
         bool have_waveforms              = !waveform_hits.empty();
         bool have_pulses                 = !pulse_hits.empty();
         bool have_fadc_scalers           = !fadc_scaler_hits.empty();
@@ -219,11 +346,33 @@ void JEventProcessor_compton::ProcessSequential(const JEvent &event) {
         bool have_hallb_pulse_times      = !hallb_pulse_time_hits.empty();
         bool have_hallb_pulse_peaks      = !hallb_pulse_peak_hits.empty();
         // Only write anything if we have at least one type of hit
-        if (have_waveforms || have_pulses || have_fadc_scalers || have_ti_scalers || have_mpd_hits || have_vftdc_hits
+        if (have_caen1190_hits ||  have_waveforms || have_pulses || have_fadc_scalers || have_ti_scalers || have_mpd_hits || have_vftdc_hits
             || have_hallb_pulse_integrals || have_hallb_pulse_times || have_hallb_pulse_peaks) {
             auto event_number = event.GetEventNumber();
 
             m_txt_output_file << "Event " << event_number << "\n";
+
+            // CAEN1190 summary
+            if (have_caen1190_hits) {
+                m_txt_output_file << "  CAEN1190 hits: " << caen1190_hits.size() << "\n";
+                for (const auto& hit : caen1190_hits) {
+                    m_txt_output_file
+                        << "    CAEN1190 rocid=" << hit->rocid
+                        << " slot=" << hit->slot
+                        << " chan=" << hit->chan
+                        << " measurement=" << hit->measurement
+                        << " opt=" << hit->opt
+                        << " flags=" << hit->flags
+                        << " trig_time=" << hit->trig_time
+                        << " hdr_chip_id=" << hit->hdr_chip_id
+                        << " hdr_event_id=" << hit->hdr_event_id
+                        << " hdr_bunch_id=" << hit->hdr_bunch_id
+                        << " trl_status=" << hit->glb_trl_status
+                        << "\n";
+                }
+            } else {
+                m_txt_output_file << "  No CAEN1190hit in this event\n";
+            }
 
             // Waveform summary
             if (have_waveforms) {
@@ -406,6 +555,8 @@ void JEventProcessor_compton::Finish() {
         m_pulse_integral_hist->Write();  // Save integral histogram to file
 	    m_tree->Write();
         m_pulse_tree->Write();           // Save pulse tree to file
+        m_caen1190_tree->Write();        // Save caen1190 tree to file
+        compton_tree->Write();        // Save compton tree to file
         m_root_output_file->Close();     // Close ROOT file
         delete m_root_output_file;       // Free memory
         m_root_output_file = nullptr;
