@@ -1,2 +1,2 @@
-add_subdirectory(compton_processor)
 add_subdirectory(compton_parser)
+add_subdirectory(compton_processor)

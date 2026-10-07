@@ -16,6 +16,6 @@ target_link_libraries(compton_processor
         ROOT::RIO
         ROOT::Tree
         ROOT::Hist
-        jana2_common_extensions::evio_parser_data_types  # data-object headers (FADC, TIScaler, MPD, VFTDC, ...)
+        jana2_common_extensions::evio_common_modules_data_types  # data-object headers (FADC, TIScaler, MPD, VFTDC, ...)
         compton_data_types
 )

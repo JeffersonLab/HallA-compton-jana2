@@ -1,6 +1,6 @@
-# evio_processor Plugin
+# compton_processor Plugin
 
-The `evio_processor` consumes the typed hit objects produced by `evio_parser` and writes them to a ROOT file as TTrees and histograms. It also writes a human-readable per-event text summary.
+The `compton_processor` consumes the typed hit objects produced by `evio_parser` and writes them to a ROOT file as TTrees and histograms. It also writes a human-readable per-event text summary.
 
 The plugin operates at the **physics event level** — it receives individual `JEvent`s that have already been unfolded by `JEventUnfolder_EVIO` and contain fully decoded detector hits.
 
@@ -17,6 +17,12 @@ The plugin operates at the **physics event level** — it receives individual `J
 
 ---
 
+This plugin requests `compton_parser`, which registers Hall A faV3 hits and
+loads common hardware decoders. Common hit headers are provided by
+`jana2_common_extensions::evio_common_modules_data_types`; faV3 headers are
+provided by the local `compton_data_types` target. Use the repository setup
+scripts; see [integration](../../../docs/compton-integration.md).
+
 ## Architecture
 
 ```
@@ -25,7 +31,7 @@ evio_parser plugin
             │  (physics-level JEvents with typed hits)
             ▼
 evio_processor plugin
-    └─ JEventProcessor_EVIO
+    └─ JEventProcessor_compton
             ├─ ProcessSequential(event)
             │       ├─ reads FADC250WaveformHit objects
             │       ├─ reads FADC250PulseHit objects
@@ -45,7 +51,7 @@ evio_processor plugin
                     └─ closes text file
 ```
 
-### `JEventProcessor_EVIO`
+### `JEventProcessor_compton`
 
 The single processor class in this plugin. It:
 
@@ -57,13 +63,14 @@ The single processor class in this plugin. It:
 
 ## Plugin Initialization
 
-`InitPlugin.cc` registers `JEventProcessor_EVIO` with the JANA2 application:
+`InitPlugin.cc` registers `JEventProcessor_compton` with the JANA2 application:
 
 ```cpp
 extern "C" {
     void InitPlugin(JApplication* app) {
         InitJANAPlugin(app);
-        app->Add(new JEventProcessor_EVIO());
+        app->AddPlugin("compton_parser");
+        app->Add(new JEventProcessor_compton());
     }
 }
 ```
@@ -117,7 +124,7 @@ ModuleParser_HelicityDecoder::parse()
 ...
 ```
 
-All hit types consumed by this processor are declared in `JEventProcessor_EVIO.h` as `Input<T>` members. JANA2 resolves them by type at event processing time.
+All hit types consumed by this processor are declared in `JEventProcessor_compton.h` as `Input<T>` members. JANA2 resolves them by type at event processing time.
 
 ---
 
@@ -134,10 +141,10 @@ All parameters are set on the JANA2 command line with `-P<name>=<value>`.
 
 ## Example Usage
 
-Using the JCE wrapper ([`jce.sh`](../../../scripts/jce.sh) or [`jce.csh`](../../../scripts/jce.csh); see [Basic usage](../../../README.md#basic-usage)):
+After sourcing `halla.sh` or `halla.csh`, use the installed JCE wrapper:
 
 ```bash
-scripts/jce.sh -Pplugins=evio_processor data.evio
+"${JCE_HOME}/scripts/jce.sh" -Pplugins=compton_processor data.evio
 ```
 
 Produces `evio_processor.root` and `evio_processor_hits.txt` in the current directory.
@@ -145,11 +152,11 @@ Produces `evio_processor.root` and `evio_processor_hits.txt` in the current dire
 ### Custom ROOT output filename
 
 ```bash
-scripts/jce.sh -Pplugins=evio_processor -PROOT_OUT_FILENAME=run_042.root data.evio
+"${JCE_HOME}/scripts/jce.sh" -Pplugins=compton_processor -PROOT_OUT_FILENAME=run_042.root data.evio
 ```
 
 ### With filtering and custom mapping
 
 ```bash
-scripts/jce.sh -Pplugins=evio_processor -PFILTER:ENABLE=1 -PFILTER:FILE=config/filter.db -PBANKMAP:FILE=config/mapping.db -PROOT_OUT_FILENAME=run_042_filtered.root data.evio
+"${JCE_HOME}/scripts/jce.sh" -Pplugins=compton_processor -PFILTER:ENABLE=1 -PFILTER:FILE=config/filter.db -PBANKMAP:FILE=config/mapping.db -PROOT_OUT_FILENAME=run_042_filtered.root data.evio
 ```

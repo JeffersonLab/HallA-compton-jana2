@@ -4,6 +4,7 @@
 extern "C" {
     void InitPlugin(JApplication* app) {
         InitJANAPlugin(app);
+        app->AddPlugin("compton_parser");
         app->Add(new JEventProcessor_compton());
     }
 }

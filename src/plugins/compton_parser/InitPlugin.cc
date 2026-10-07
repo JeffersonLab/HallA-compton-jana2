@@ -7,6 +7,6 @@ void RegisterComptonModuleParsers(JApplication* app);
 
 extern "C" void InitPlugin(JApplication* app) {
     InitJANAPlugin(app);
-    app->AddPlugin("evio_parser");
+    app->AddPlugin("evio_common_modules");
     RegisterComptonModuleParsers(app);
 }

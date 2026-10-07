@@ -4,7 +4,7 @@
 #include "JEventService_ModuleParsersMap.h"
 
 // Module parsers
-#include "ModuleParser_faV3compton.cc"
+#include "ModuleParser_faV3compton.h"
 
 class JEventService_ComptonModuleParsers final : public JService {
 public:
@@ -15,7 +15,7 @@ public:
     }
 
 private:
-    void add(int id, std::shared_ptr<BankParser> parser) {
+    void add(int id, std::shared_ptr<ModuleParser> parser) {
         parsers->addParser(id, std::move(parser));
     }
 };
