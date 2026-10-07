@@ -1,13 +1,13 @@
 #ifndef MODULEPARSER_faV3compton_H
 #define MODULEPARSER_faV3compton_H
 
-#include "BankParser.h"
+#include "ModuleParser.h"
 
 /**
  * @class ModuleParser_faV3compton
  * @brief ModuleParser implementation for faV3compton250 data
  */
-class ModuleParser_faV3compton : public BankParser {
+class ModuleParser_faV3compton : public ModuleParser {
 public:
     void parse(std::shared_ptr<evio::BaseStructure> data_block,
                uint32_t rocid,

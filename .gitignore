@@ -12,4 +12,5 @@ build
 scripts/plot_waveform
 !CMakeLists.txt
 raw
-sourceme.sh
+lib/
+include/
