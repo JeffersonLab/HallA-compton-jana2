@@ -1,109 +1,278 @@
 # HallA-compton-jana2
 
-## Build and Setup
+This package reads Hall A Compton EVIO data and writes a ROOT file and a text
+hit summary. It uses **jana2-common-extensions (JCE)** for the shared data-reading
+framework and **ROOT** for the output file.
 
-Use `RelWithDebInfo` for optimized processing with debug symbols for profiling.
-`Release` is also suitable for optimized runs. An empty CMake build type is not
-equivalent to an optimized build. The JCE superbuild forwards the selected type
-to JANA2, EVIO, and JCE; rebuild and install after changing it.
-CMake defaults to `RelWithDebInfo` when no build type is selected; an explicit
-build type in the CMake cache is preserved.
+## Start here
 
-Build mode clones `jana2-common-extensions` beside this repository if it is
-missing, or reuses the existing checkout. Set `JCE_SOURCE_DIR` to use another
-existing checkout; an empty or invalid override fails without cloning.
-Setup mode never clones. JCE must include configuration layering and
-must no longer register the Hall A faV3 decoder. ROOT must already be installed. Every build invocation requires its installation
-prefix explicitly; omitting it fails before any build commands run.
+| Your situation | What to do |
+|---|---|
+| JCE is already installed, but Compton is not built yet | [A. Build only Compton](#a-jce-is-already-installed) |
+| JCE is not installed | [B. Build JCE and Compton together](#b-jce-is-not-installed) |
 
-From the Compton checkout, in tcsh:
+Before starting:
 
-```tcsh
-source halla.csh build /path/to/ROOT
-"${JCE_HOME}/scripts/jce.csh" /path/to/data.evio
-```
+- Have ROOT 6 installed and loaded (`root-config` available on `PATH`).
+- Have CMake and a C++20 compiler available. The full JCE build also needs Git,
+  Boost and LZ4 development files, and internet access for dependency downloads.
+- Run all commands below **from the `HallA-compton-jana2` folder**.
 
-Or in Bash:
+## A. JCE is already installed
 
-```bash
-source halla.sh build /path/to/ROOT
-"${JCE_HOME}/scripts/jce.sh" /path/to/data.evio
-```
+Use this path to build Compton against an existing JCE installation without
+rebuilding JCE, JANA2, or EVIO. The installation must provide the complete
+JCE/JANA2/EVIO stack. For the default JCE build, its location is the
+`jce-stack` folder inside `jana2-common-extensions`.
 
-The build step builds JCE's pinned JANA/EVIO stack, then builds and installs
-Compton directly into the current checkout, matching Hall C: plugins under
-`lib/plugins/`, headers under `include/`, and configuration under `config/`. It does not download or install ROOT.
-The first stack build may download dependencies. An optional `JCE_HOME` selects
-another stack installation prefix. ROOT search paths in `CMAKE_PREFIX_PATH`
-are retained. Build commands stop at the first failure without closing the
-calling shell.
+### 1. Set the JCE installation path
 
-On ifarm, pass the installed ROOT prefix during the build stage (replace the
-placeholder with your site's ROOT installation directory):
-
-```tcsh
-source halla.csh build /path/on/ifarm/to/ROOT
-```
+Bash:
 
 ```bash
-source halla.sh build /path/on/ifarm/to/ROOT
+export JCE_HOME="/path/to/jana2-common-extensions/jce-stack"
 ```
 
-The required argument selects `ROOT_DIR` from that installation's
-`ROOTConfig.cmake`, overriding any cached ROOT selection. Invalid prefixes fail
-before the build begins. It is not
-needed when sourcing setup later; the build keeps its configuration in `build/`.
+tcsh:
 
-After installation, `source halla.csh` or `source halla.sh` sets up an existing
-installation without building. Run from the Compton checkout. Setup selects
-`JCE_HOME`, sets `COMPTON_HOME` to the checkout directory, prepends Compton's plugin directory,
-and appends its installed config directory to `JCE_CONFIG_DIR`. Existing path
-entries are preserved, and repeated sourcing does not duplicate entries.
-The tcsh script sources environment settings produced by the Bash implementation;
-executing a child shell alone cannot set the caller's environment.
-These scripts replace `sourceme.sh`.
+```tcsh
+setenv JCE_HOME /path/to/jana2-common-extensions/jce-stack
+```
 
-## EVIO Replay
+### 2. Build and install Compton
 
-Core default plugins include `evio_parser`, `evio_common_modules`, and
-`detector_translation`. Compton's `default_plugins.db` adds `compton_parser`
-and `compton_processor`. The parser registers decoder ID 253 once. Compton owns
-bank routes `253 -> 253` and `595 -> 253` (file format: module then bank).
-Loading `compton_processor` explicitly also requests `compton_parser`, which
-requests the common module parsers. ROOT output is `evio_processor.root` and
-text output is `evio_processor_hits.txt` by default, in the current directory.
-Existing ROOT output is overwritten.
+```sh
+cmake -S . -B build -DCMAKE_PREFIX_PATH="$JCE_HOME;`root-config --prefix`" -DCMAKE_INSTALL_PREFIX="$PWD/install"
+cmake --build build --parallel
+cmake --install build
+```
+
+This installs Compton into `install/`: plugins in `install/lib/plugins/`,
+headers in `install/include/`, and configuration in `install/config/`.
+
+### 3. Set up and run
+
+Continue to [Set up replay environment](#set-up-replay-environment).
+You do not need to set `JCE_SOURCE_DIR` for this build path.
+
+**Do not use `source setup_compton.sh build ...` or `source setup_compton.csh build ...` to
+skip the JCE build.** Their `build` mode always runs the JCE stack build before
+building Compton, even when `JCE_HOME` points to an existing installation.
+
+## B. JCE is not installed
+
+Use the setup script to build and install the complete JCE stack, followed by
+Compton. ROOT must already be installed; the script does not install ROOT.
+
+### 1. Choose the JCE source location
+
+`JCE_SOURCE_DIR` is only needed when using the script's `build` mode with JCE
+sources outside the default sibling folder. It is optional for the default
+layout below.
+
+Normally, leave `JCE_SOURCE_DIR` unset. The script looks for this layout and
+downloads `jana2-common-extensions` if that sibling folder is missing:
+
+```text
+parent-folder/
+├── HallA-compton-jana2/       ← run commands here
+└── jana2-common-extensions/
+    └── jce-stack/            ← installed JCE stack
+```
+
+If you already downloaded the JCE source somewhere else, select it first:
+
+Bash:
+
+```bash
+export JCE_SOURCE_DIR="/path/to/jana2-common-extensions"
+```
+
+tcsh:
+
+```tcsh
+setenv JCE_SOURCE_DIR /path/to/jana2-common-extensions
+```
+
+An explicitly selected source folder must already exist and contain
+`superbuild/CMakeLists.txt`. The script reuses existing sources without pulling
+updates from Git.
+
+### 2. Build and install
+
+Bash:
+
+```bash
+source setup_compton.sh build
+```
+
+tcsh:
+
+```tcsh
+source setup_compton.csh build
+```
+
+The script checks ROOT, builds JCE's pinned JANA2/EVIO dependencies and JCE,
+then builds and installs Compton.
+By default, the stack is installed into `JCE_SOURCE_DIR/jce-stack`; Compton
+is installed into `HallA-compton-jana2/install/`. If `JCE_HOME` is already set, the stack
+will be installed there instead.
+
+The script detects the loaded ROOT installation using `root-config --prefix`.
+To select another installation, pass its prefix explicitly:
+`source setup_compton.sh build /path/to/ROOT` (or `setup_compton.csh` for tcsh).
+The script stops at the first failure. A successful build also sets up the
+current terminal for replay. Continue to [Run replay](#run-replay).
+
+## Set up replay environment
+
+After installation, configure the environment using either the setup script or
+manual settings below. ROOT should remain loaded in the current environment.
+
+### Option 1: Use the setup script
+
+From the `HallA-compton-jana2` folder:
+
+Bash:
+
+```bash
+source setup_compton.sh
+```
+
+tcsh:
+
+```tcsh
+source setup_compton.csh
+```
+
+Without `build`, the script checks for the installed JCE and Compton packages
+and configures these variables:
+
+| Variable | Setup action |
+|---|---|
+| `JCE_HOME` | Uses the existing value, or defaults to the sibling JCE source folder's `jce-stack` installation |
+| `COMPTON_HOME` | Sets it to this project's `install/` directory |
+| `JANA_PLUGIN_PATH` | Prepends `$COMPTON_HOME/lib/plugins` |
+| `JCE_CONFIG_DIR` | Appends `$COMPTON_HOME/config` |
+
+Existing plugin and config paths are preserved, and repeated sourcing avoids
+duplicate entries. For a custom JCE installation, set `JCE_HOME` before sourcing.
+`JCE_SOURCE_DIR` is not required for setup only when `JCE_HOME` points to the
+installed stack. If `JCE_SOURCE_DIR` is already set, the script validates it
+even without `build`: correct it or unset it if the source folder no longer
+exists. When `JCE_HOME` is unset, `JCE_SOURCE_DIR` controls its default location.
+
+### Option 2: Set the environment manually
+
+The setup script is optional. These settings provide the same runtime paths
+without invoking it. Use the actual JCE and Compton installation locations.
+
+Bash:
+
+```bash
+export JCE_HOME="/path/to/jana2-common-extensions/jce-stack"
+export COMPTON_HOME="/path/to/HallA-compton-jana2/install"
+export JANA_PLUGIN_PATH="$COMPTON_HOME/lib/plugins${JANA_PLUGIN_PATH:+:$JANA_PLUGIN_PATH}"
+export JCE_CONFIG_DIR="${JCE_CONFIG_DIR:+$JCE_CONFIG_DIR:}$COMPTON_HOME/config"
+```
+
+tcsh:
+
+```tcsh
+setenv JCE_HOME /path/to/jana2-common-extensions/jce-stack
+setenv COMPTON_HOME /path/to/HallA-compton-jana2/install
+if (! $?JANA_PLUGIN_PATH) setenv JANA_PLUGIN_PATH ""
+if (! $?JCE_CONFIG_DIR) setenv JCE_CONFIG_DIR ""
+if ("$JANA_PLUGIN_PATH" == "") then
+    setenv JANA_PLUGIN_PATH "$COMPTON_HOME/lib/plugins"
+else
+    setenv JANA_PLUGIN_PATH "$COMPTON_HOME/lib/plugins:$JANA_PLUGIN_PATH"
+endif
+if ("$JCE_CONFIG_DIR" == "") then
+    setenv JCE_CONFIG_DIR "$COMPTON_HOME/config"
+else
+    setenv JCE_CONFIG_DIR "${JCE_CONFIG_DIR}:$COMPTON_HOME/config"
+endif
+```
+
+These commands preserve existing path entries; apply them once per terminal
+to avoid duplicates. `JCE_SOURCE_DIR` is not needed for manual runtime setup.
+
+### Run replay
+
+Bash:
 
 ```bash
 "${JCE_HOME}/scripts/jce.sh" -Pjana:nevents=10 /path/to/data.evio
 ```
 
-Bank mapping and filter files merge core first, then directories listed in
-`JCE_CONFIG_DIR`. Explicit `BANKMAP:FILE` and `FILTER:FILE` replace only core;
-directory additions still apply. Filtering is disabled by default. Before
-using `FILTER:ENABLE=1`, validate `config/filter.db` against the actual run:
-it currently has bank `3654` while the helicity mapping is `3564`, and it has
-no bank `595` entry. Add the actual ROC/bank combinations needed for your data;
-the setup does not guess them.
+tcsh:
 
-Hall A's decoder and raw-hit headers live in this repository. Rebuild JCE after
-updating both checkouts so an older common plugin cannot register decoder 253
-alongside Compton. Translation catalogs retain their existing experiment
-registration; this change does not add Compton detector translators.
+```tcsh
+"${JCE_HOME}/scripts/jce.csh" -Pjana:nevents=10 /path/to/data.evio
+```
 
-## Verification
+The replay command processes up to 10 events as a first check. Remove
+`-Pjana:nevents=10` to process the full file. Compton's parser and processor are
+loaded automatically through `$COMPTON_HOME/config/default_plugins.db`.
 
-Run `python3 tests/test_halla_setup.py` for shell setup and build orchestration.
-It uses temporary installations and a mock CMake command, without downloading
-or building dependencies. For physics validation, build against actual JCE/ROOT,
-replay a known EVIO sample, and check nonzero accumulator entries in
-`compton_tree` together with expected raw-hit counts.
+By default, output is written in the directory where you run replay:
 
-## Useful user flags
-All parameters are set on the JANA2 command line with `-P<name>=<value>`.
+- `evio_processor.root`: ROOT output.
+- `evio_processor_hits.txt`: text hit summary.
 
-| Parameter | Default | `is_shared` | Description |
-|---|---|---|---|
-| `ROOT_OUT_FILENAME` | `evio_processor.root` | yes | Path/name of the ROOT output file |
-| `TXT_OUT_FILENAME` | `evio_processor_hits.txt` | yes | Path/name of the text hit-summary file |
-| `jana:nevents` |  | | Number of events to process |
+**Existing ROOT output is overwritten.** Choose an output name for each run:
+
+```sh
+"${JCE_HOME}/scripts/jce.sh" -PROOT_OUT_FILENAME=run_042.root -PTXT_OUT_FILENAME=run_042_hits.txt /path/to/data.evio
+```
+
+For tcsh, use `jce.csh` in the same command.
+
+## Which path variable should I use?
+
+| Variable | What it points to | When you need it |
+|---|---|---|
+| `JCE_SOURCE_DIR` | JCE source code, containing `superbuild/` and `src/` | Set this when building from JCE sources outside the default sibling folder. To configure replay with an installed JCE stack, set `JCE_HOME` instead. |
+| `JCE_HOME` | Installed JCE/JANA2/EVIO stack, containing `bin/jana` and `scripts/` | To use or install a stack outside the default `jce-stack` location |
+| `COMPTON_HOME` | Compton installation folder (`HallA-compton-jana2/install`) | Set by the setup script or manually for runtime setup |
+
+Setting `JCE_HOME` does not select the JCE source code used by `build` mode.
+For a custom source location and custom installation location, set both
+`JCE_SOURCE_DIR` and `JCE_HOME`.
+
+## Troubleshooting
+
+| Message or problem | What to check |
+|---|---|
+| `Run from the HallA-compton-jana2 source directory` | Change to this repository's folder before sourcing the setup script. |
+| `ROOT not found` | Load ROOT so `root-config` is on `PATH`, or pass the ROOT installation prefix after `build`. |
+| `ROOTConfig.cmake not found` | Check the supplied ROOT path. The script searches its `cmake/`, `lib/cmake/ROOT/`, `lib64/cmake/ROOT/`, and the folder itself. |
+| `JCE_SOURCE_DIR must point to an existing ... source directory` | Correct the source path, or unset the variable to use the default sibling folder. |
+| `JCE or Compton is not installed` | Check `JCE_HOME`. If only JCE is installed, build Compton using section A; otherwise use section B. |
+| CMake cannot find `jana2_common_extensions` | Use the installation folder for `JCE_HOME`, rather than the source folder. Check that the JCE installation completed. |
+| An earlier ROOT installation is still selected | CMake remembers paths in `build/`. Reconfigure with `-DROOT_DIR=/actual/folder/containing/ROOTConfig.cmake`, or use the script's build mode with the desired ROOT prefix. |
+
+## Build settings and developer checks
+
+The default build type is `RelWithDebInfo`: optimized processing with debug
+symbols for profiling. Existing explicit choices in the CMake cache are
+preserved. For a Compton-only build, choose another type at configuration time
+with, for example, `-DCMAKE_BUILD_TYPE=Release`. The JCE superbuild forwards its
+selected type to JANA2, EVIO, and JCE; rebuild and install after changing it.
+
+Run `python3 tests/test_compton_setup.py` to check shell setup and build
+orchestration. It uses temporary installations and a mock CMake command,
+without downloading or building dependencies. For physics validation, replay
+a known EVIO sample and check nonzero accumulator entries in `compton_tree`
+together with expected raw-hit counts.
+
+## Useful replay options
+
+Add options to the replay command using `-P<name>=<value>`.
+
+| Option | Default | Purpose |
+|---|---|---|
+| `ROOT_OUT_FILENAME` | `evio_processor.root` | ROOT output file name |
+| `TXT_OUT_FILENAME` | `evio_processor_hits.txt` | Text hit-summary file name |
+| `jana:nevents` | No limit specified | Maximum number of events to process |

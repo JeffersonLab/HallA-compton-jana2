@@ -141,7 +141,7 @@ All parameters are set on the JANA2 command line with `-P<name>=<value>`.
 
 ## Example Usage
 
-After sourcing `halla.sh` or `halla.csh`, use the installed JCE wrapper:
+After sourcing `setup_compton.sh` or `setup_compton.csh`, use the installed JCE wrapper:
 
 ```bash
 "${JCE_HOME}/scripts/jce.sh" -Pplugins=compton_processor data.evio

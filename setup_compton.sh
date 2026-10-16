@@ -1,24 +1,20 @@
 #!/usr/bin/env bash
-# From the Compton checkout: source halla.sh [build ROOT_PREFIX].
-# --csh emits settings for the thin halla.csh wrapper.
-_halla_setup() {
+# From the Compton source directory: source setup_compton.sh [build [ROOT_PREFIX]].
+# --csh emits settings for the thin setup_compton.csh wrapper.
+_compton_setup() {
     local emit_csh=false
     if [[ "${1:-}" == --csh ]]; then emit_csh=true; shift; fi
     if [[ $# -gt 2 || ( $# -gt 0 && "$1" != build ) ]]; then
-        echo "Usage: source halla.sh [build ROOT_PREFIX]" >&2
-        return 1
-    fi
-    if [[ "${1:-}" == build && ( $# -ne 2 || -z "$2" ) ]]; then
-        echo "ROOT prefix is required: source halla.sh build /path/to/ROOT (or source halla.csh build /path/to/ROOT)." >&2
+        echo "Usage: source setup_compton.sh [build [ROOT_PREFIX]]" >&2
         return 1
     fi
     local root="$PWD" jce_source="${JCE_SOURCE_DIR-$PWD/../jana2-common-extensions}"
-    if [[ ! -f "$root/halla.sh" || ! -f "$root/CMakeLists.txt" ]]; then
-        echo "Run from the HallA-compton-jana2 checkout." >&2
+    if [[ ! -f "$root/setup_compton.sh" || ! -f "$root/CMakeLists.txt" ]]; then
+        echo "Run from the HallA-compton-jana2 source directory." >&2
         return 1
     fi
     if [[ -z "$jce_source" || ( ${JCE_SOURCE_DIR+x} && ! -f "$jce_source/superbuild/CMakeLists.txt" ) ]]; then
-        echo "JCE_SOURCE_DIR must point to an existing jana2-common-extensions checkout, or be unset." >&2
+        echo "JCE_SOURCE_DIR must point to an existing jana2-common-extensions source directory, or be unset." >&2
         return 1
     fi
     if [[ -d "$jce_source" ]]; then
@@ -26,27 +22,38 @@ _halla_setup() {
     elif [[ "$jce_source" != /* ]]; then
         jce_source="$root/$jce_source"
     fi
-    local stack="${JCE_HOME:-$jce_source/jce-stack}" install="$root"
+    local stack="${JCE_HOME:-$jce_source/jce-stack}" install="$root/install"
     local prefixes="${CMAKE_PREFIX_PATH//:/;}"
     if [[ "$stack" != /* ]]; then stack="$root/$stack"; fi
     if [[ "${1:-}" == build ]]; then
-        local root_config="" candidate
-        for candidate in "$2/cmake" "$2/lib/cmake/ROOT" "$2/lib64/cmake/ROOT" "$2"; do
+        local root_config="" candidate root_prefix="${2:-}"
+        if [[ $# -eq 1 ]]; then
+            if ! command -v root-config >/dev/null 2>&1; then
+                echo "ROOT not found: load ROOT or pass its installation prefix after build." >&2
+                return 1
+            fi
+            root_prefix=$(root-config --prefix) || return 1
+        fi
+        if [[ -z "$root_prefix" ]]; then
+            echo "ROOT installation prefix is empty." >&2
+            return 1
+        fi
+        for candidate in "$root_prefix/cmake" "$root_prefix/lib/cmake/ROOT" "$root_prefix/lib64/cmake/ROOT" "$root_prefix"; do
             if [[ -f "$candidate/ROOTConfig.cmake" ]]; then
                 root_config=$(cd -- "$candidate" && pwd) || return 1
                 break
             fi
         done
         if [[ -z "$root_config" ]]; then
-            echo "ROOTConfig.cmake not found under the supplied ROOT prefix: $2" >&2
+            echo "ROOTConfig.cmake not found under the ROOT prefix: $root_prefix" >&2
             return 1
         fi
-        prefixes="$2${prefixes:+;$prefixes}"
+        prefixes="$root_prefix${prefixes:+;$prefixes}"
         if [[ ! -d "$jce_source" ]]; then
             git clone https://github.com/JeffersonLab/jana2-common-extensions.git "$jce_source" >&2 || return 1
         fi
         if [[ ! -f "$jce_source/superbuild/CMakeLists.txt" ]]; then
-            echo "Set JCE_SOURCE_DIR to an existing jana2-common-extensions checkout." >&2
+            echo "Set JCE_SOURCE_DIR to an existing jana2-common-extensions source directory." >&2
             return 1
         fi
         cmake -S "$jce_source/superbuild" -B "$jce_source/build-super" \
@@ -60,7 +67,7 @@ _halla_setup() {
         cmake --install "$root/build" >&2 || return 1
     fi
     if [[ ! -x "$stack/bin/jana" || ! -d "$install/lib/plugins" || ! -d "$install/config" ]]; then
-        echo "JCE or Compton is not installed. Run: source halla.sh build (or source halla.csh build)." >&2
+        echo "JCE or Compton is not installed. Run: source setup_compton.sh build (or source setup_compton.csh build)." >&2
         return 1
     fi
     local plugins="${JANA_PLUGIN_PATH:-}" configs="${JCE_CONFIG_DIR:-}"
@@ -90,10 +97,10 @@ _halla_setup() {
         export JANA_PLUGIN_PATH="$plugins" JCE_CONFIG_DIR="$configs"
     fi
 }
-if _halla_setup "$@"; then
-    unset -f _halla_setup
+if _compton_setup "$@"; then
+    unset -f _compton_setup
     true
 else
-    unset -f _halla_setup
+    unset -f _compton_setup
     false
 fi

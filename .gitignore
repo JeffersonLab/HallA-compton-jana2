@@ -14,3 +14,5 @@ scripts/plot_waveform
 raw
 lib/
 include/
+
+/install/
