@@ -64,7 +64,7 @@ building Compton, even when `JCE_HOME` points to an existing installation.
 Use the setup script to build and install the complete JCE stack, followed by
 Compton. ROOT must already be installed; the script does not install ROOT.
 
-### 1. Choose the JCE source location
+### 1. Choose the JCE source location (Optional)
 
 `JCE_SOURCE_DIR` is only needed when using the script's `build` mode with JCE
 sources outside the default sibling folder. It is optional for the default
@@ -172,8 +172,8 @@ Bash:
 ```bash
 export JCE_HOME="/path/to/jana2-common-extensions/jce-stack"
 export COMPTON_HOME="/path/to/HallA-compton-jana2/install"
-export JANA_PLUGIN_PATH="$COMPTON_HOME/lib/plugins${JANA_PLUGIN_PATH:+:$JANA_PLUGIN_PATH}"
-export JCE_CONFIG_DIR="${JCE_CONFIG_DIR:+$JCE_CONFIG_DIR:}$COMPTON_HOME/config"
+export JANA_PLUGIN_PATH="$COMPTON_HOME/lib/plugins"
+export JCE_CONFIG_DIR="$COMPTON_HOME/config"
 ```
 
 tcsh:
@@ -181,22 +181,11 @@ tcsh:
 ```tcsh
 setenv JCE_HOME /path/to/jana2-common-extensions/jce-stack
 setenv COMPTON_HOME /path/to/HallA-compton-jana2/install
-if (! $?JANA_PLUGIN_PATH) setenv JANA_PLUGIN_PATH ""
-if (! $?JCE_CONFIG_DIR) setenv JCE_CONFIG_DIR ""
-if ("$JANA_PLUGIN_PATH" == "") then
-    setenv JANA_PLUGIN_PATH "$COMPTON_HOME/lib/plugins"
-else
-    setenv JANA_PLUGIN_PATH "$COMPTON_HOME/lib/plugins:$JANA_PLUGIN_PATH"
-endif
-if ("$JCE_CONFIG_DIR" == "") then
-    setenv JCE_CONFIG_DIR "$COMPTON_HOME/config"
-else
-    setenv JCE_CONFIG_DIR "${JCE_CONFIG_DIR}:$COMPTON_HOME/config"
-endif
+setenv JANA_PLUGIN_PATH "$COMPTON_HOME/lib/plugins"
+setenv JCE_CONFIG_DIR "$COMPTON_HOME/config"
 ```
 
-These commands preserve existing path entries; apply them once per terminal
-to avoid duplicates. `JCE_SOURCE_DIR` is not needed for manual runtime setup.
+Apply them once per terminal to avoid duplicates.
 
 ### Run replay
 
