@@ -4,6 +4,7 @@
 #include "ModuleParser.h"
 #include "faV3comptonAccumulatorHit.h"
 #include "faV3comptonPulseHit.h"
+#include "faV3comptonWaveformHit.h"
 
 /**
  * @class ModuleParser_faV3compton
@@ -25,7 +26,12 @@ private:
      std::vector<faV3comptonPulseHit> parsePulseSum(
          const std::vector<uint32_t>& data_words,
          size_t& index,
-         uint32_t pulse_number,
+         uint32_t chan,
+         uint32_t prescale_factor);
+
+     std::vector<faV3comptonWaveformHit> parseWaveform(
+         const std::vector<uint32_t>& data_words,
+         size_t& index,
          uint32_t chan,
          uint32_t prescale_factor);
 };

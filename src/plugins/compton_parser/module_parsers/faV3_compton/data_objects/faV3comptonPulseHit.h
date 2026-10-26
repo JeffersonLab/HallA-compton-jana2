@@ -7,7 +7,6 @@
  */
 class faV3comptonPulseHit {
 public:
-    uint32_t pulse_number;
     uint32_t chan;
     uint32_t prescale_factor;
     uint32_t nsamples;
@@ -23,7 +22,7 @@ public:
      *
      * Initializes all members to zero.
      */
-    faV3comptonPulseHit() : pulse_number(0), chan(0), prescale_factor(0), nsamples(0), overflow(0), underflow(0),
+    faV3comptonPulseHit() : chan(0), prescale_factor(0), nsamples(0), overflow(0), underflow(0),
                             vpeak(0), pulse_missed(0), nsb_nsa_overlap(0), sum(0) {}
 
 };

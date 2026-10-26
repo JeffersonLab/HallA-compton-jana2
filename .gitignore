@@ -5,6 +5,7 @@ data
 *.d
 *.so
 *.pcm
+*.x
 Rootfiles
 .*
 !.gitignore

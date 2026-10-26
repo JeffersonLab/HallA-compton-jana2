@@ -95,6 +95,20 @@ void ModuleParser_faV3compton::parse(std::shared_ptr<evio::BaseStructure> data_b
                LOG_DEBUG(GetLogger()) << std::dec << "ModuleParser_faV3compton::DEBUG - Word " << j << " 0x" << std::hex << d << std::dec<<" - data type 3: Trigger Time 1 = " << timestamp1 << LOG_END;
 	    }
 
+	    if(data_type == 4) { // Waveform
+
+               uint32_t waveform_chan = getBitsInRange(d, 26, 23);
+               uint32_t waveform_prescale = getBitsInRange(d, 9, 0);
+
+               LOG_DEBUG(GetLogger()) << std::dec << "ModuleParser_faV3compton::DEBUG - Word " << j << " 0x" << std::hex << d << std::dec<<" - data type 4 Word 1: Chan = " << waveform_chan << " ; prescale = " << waveform_prescale << LOG_END;
+              
+               j++;
+               auto hits = parseWaveform(data_words, j, waveform_chan, waveform_prescale); 
+               for ( auto& hit : hits) {
+                  event_hits_map[event_number]->waveforms.push_back(new faV3comptonWaveformHit(hit));
+               }
+	    }
+
 	    if(data_type == 8) { // Helicity
 	       uint32_t tstopbeyongmps =  getBitsInRange(d, 25, 25);
 	       uint32_t hel_num1 =  getBitsInRange(d, 24, 0);
@@ -111,7 +125,7 @@ void ModuleParser_faV3compton::parse(std::shared_ptr<evio::BaseStructure> data_b
                LOG_DEBUG(GetLogger()) << std::dec << "ModuleParser_faV3compton::DEBUG - Word " << j << " 0x" << std::hex << d << std::dec<<" - data type 9 Word 1: event number within block = " << pulse_evnum << " ; Chan = " << pulse_chan << " ; prescale = " << pulse_prescale << LOG_END;
               
                j++;
-               auto hits = parsePulseSum(data_words, j, pulse_evnum, pulse_chan, pulse_prescale); 
+               auto hits = parsePulseSum(data_words, j, pulse_chan, pulse_prescale); 
                for ( auto& hit : hits) {
                   event_hits_map[event_number]->pulses.push_back(new faV3comptonPulseHit(hit));
                }
@@ -290,7 +304,6 @@ std::vector<faV3comptonAccumulatorHit> ModuleParser_faV3compton::parseAccumulato
 std::vector<faV3comptonPulseHit> ModuleParser_faV3compton::parsePulseSum(
     const std::vector<uint32_t>& data_words,
     size_t& index,
-    uint32_t pulse_number,
     uint32_t chan,
     uint32_t prescale_factor) {
 
@@ -306,7 +319,6 @@ std::vector<faV3comptonPulseHit> ModuleParser_faV3compton::parsePulseSum(
          }
 
          faV3comptonPulseHit hit;
-         hit.pulse_number = pulse_number;
          hit.chan = chan;
          hit.prescale_factor = prescale_factor;
 
@@ -315,7 +327,7 @@ std::vector<faV3comptonPulseHit> ModuleParser_faV3compton::parsePulseSum(
          hit.underflow = getBitsInRange(d, 13, 13);
          hit.vpeak = getBitsInRange(d, 12, 0);
 
-         LOG_DEBUG(GetLogger()) << std::dec << "ModuleParser_faV3compton::DEBUG - Word " << index << " 0x" << std::hex << d << std::dec<<" - data type 10 Word 2: number of samples in sum = " << hit.nsamples << " ; Overflow = " << hit.overflow << " ; Underflow = " << hit.underflow << " ; Vpeak = " << hit.vpeak << LOG_END;
+         LOG_DEBUG(GetLogger()) << std::dec << "ModuleParser_faV3compton::DEBUG - Word " << index << " 0x" << std::hex << d << std::dec<<" - data type 9 Word 2: number of samples in sum = " << hit.nsamples << " ; Overflow = " << hit.overflow << " ; Underflow = " << hit.underflow << " ; Vpeak = " << hit.vpeak << LOG_END;
 
          index++;
          d = data_words[index]; //word 3
@@ -323,7 +335,7 @@ std::vector<faV3comptonPulseHit> ModuleParser_faV3compton::parsePulseSum(
          hit.nsb_nsa_overlap = getBitsInRange(d, 28, 28);
          hit.sum = getBitsInRange(d, 24, 0);
 
-         LOG_DEBUG(GetLogger()) << std::dec << "ModuleParser_faV3compton::DEBUG - Word " << index << " 0x" << std::hex << d << std::dec<<" - data type 10 Word 3: Missed Pulse = " << hit.pulse_missed << " ; NSB_NSA_Overlap = " << hit.nsb_nsa_overlap << " ; Sum = " << hit.sum << LOG_END;
+         LOG_DEBUG(GetLogger()) << std::dec << "ModuleParser_faV3compton::DEBUG - Word " << index << " 0x" << std::hex << d << std::dec<<" - data type 9 Word 3: Missed Pulse = " << hit.pulse_missed << " ; NSB_NSA_Overlap = " << hit.nsb_nsa_overlap << " ; Sum = " << hit.sum << LOG_END;
 
          index++;
 
@@ -331,4 +343,64 @@ std::vector<faV3comptonPulseHit> ModuleParser_faV3compton::parsePulseSum(
     }
     
     return pulse_hits;
+}
+
+std::vector<faV3comptonWaveformHit> ModuleParser_faV3compton::parseWaveform(
+    const std::vector<uint32_t>& data_words,
+    size_t& index,
+    uint32_t chan,
+    uint32_t prescale_factor) {
+
+    std::vector<faV3comptonWaveformHit> waveform_hits;
+    uint32_t pulse_number=1;
+
+    faV3comptonWaveformHit hit;
+    hit.chan = chan;
+    hit.prescale = prescale_factor;
+
+    while( index<data_words.size() ){
+         auto d = data_words[index]; //word 2 or word 3
+         
+         uint32_t data_type = getBitsInRange(d, 31, 31);
+         if( data_type == 1 ) {
+             index--;
+             break;
+         }
+  
+         uint32_t start_of_pulse = getBitsInRange(d, 29, 29); 
+         if( start_of_pulse == 1 ){
+      
+             if( pulse_number>1){
+                 waveform_hits.push_back(hit); // push the previous pulse;
+             }
+
+             hit.clearWaveform(); // new pulse hit start
+             hit.chan = chan;
+             hit.prescale = prescale_factor;
+             hit.pulse_number = pulse_number;
+
+             LOG_DEBUG(GetLogger()) << std::dec << "ModuleParser_faV3compton::DEBUG - Word " << index << " 0x" << std::hex << d << std::dec<<" - data type 4 Word 2: start_of_pulse = " << start_of_pulse << " ; pulse_number = " << pulse_number << LOG_END;
+
+             pulse_number++;
+         }
+
+         uint32_t tmp_sample = getBitsInRange(d, 28, 16);
+         hit.addSample(tmp_sample);
+         uint32_t sample_not_valid = getBitsInRange(d, 13, 13);
+         if( sample_not_valid == 1 ){
+             LOG_DEBUG(GetLogger()) << std::dec << "ModuleParser_faV3compton::DEBUG - Word " << index << " 0x" << std::hex << d << std::dec<<" - data type 4 Word 2/3: start_of_pulse = " << start_of_pulse << " ; ADC sample = " << tmp_sample << " ; sample_not_valid = " << sample_not_valid << LOG_END;
+         }
+         else{
+             tmp_sample = getBitsInRange(d, 12, 0);
+             hit.addSample(tmp_sample);
+             LOG_DEBUG(GetLogger()) << std::dec << "ModuleParser_faV3compton::DEBUG - Word " << index << " 0x" << std::hex << d << std::dec<<" - data type 4 Word 2/3: start_of_pulse = " << start_of_pulse << " ; ADC sample 1 = " << tmp_sample << " ; ADC sample 2 = " << tmp_sample << LOG_END;
+         }
+         
+         index++;
+    }
+
+    if( hit.getWaveformSize()>0 )
+        waveform_hits.push_back(hit); // push the last pulse
+    
+    return waveform_hits;
 }

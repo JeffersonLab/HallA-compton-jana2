@@ -25,6 +25,8 @@ JEventProcessor_compton::JEventProcessor_compton() {
     m_hallb_pulse_peak_hits_in.SetOptional(true);
     m_faV3compton_hits_in.SetOptional(true);
     m_faV3comptonAccumulator_hits_in.SetOptional(true);
+    m_faV3comptonWaveform_hits_in.SetOptional(true);
+    m_faV3comptonPulse_hits_in.SetOptional(true);
 }
 
 /**
@@ -130,6 +132,16 @@ void JEventProcessor_compton::Init() {
     compton_tree->Branch("acc_np_nsboverlapped", &acc_np_nsboverlapped);
     compton_tree->Branch("acc_np_nonsa", &acc_np_nonsa);
     compton_tree->Branch("acc_np_miss", &acc_np_miss);
+    
+    compton_tree->Branch("pulse_chan", &pulse_chan);
+    compton_tree->Branch("pulse_prescale", &pulse_prescale);
+    compton_tree->Branch("pulse_nsamples", &pulse_nsamples);
+    compton_tree->Branch("pulse_overflow", &pulse_overflow);
+    compton_tree->Branch("pulse_underflow", &pulse_underflow);
+    compton_tree->Branch("pulse_vpeak", &pulse_vpeak);
+    compton_tree->Branch("pulse_missed", &pulse_missed);
+    compton_tree->Branch("pulse_nsb_nsa_overlap", &pulse_nsb_nsa_overlap);
+    compton_tree->Branch("pulse_sum", &pulse_sum);
 
     // Optionally: Text output file for human-readable hit summaries
     m_txt_output_file.open(m_txt_output_filename().c_str());
@@ -317,6 +329,26 @@ void JEventProcessor_compton::ProcessSequential(const JEvent &event) {
 	acc_np_miss.push_back(compton_accum->acc_np_miss);
     }
 
+    pulse_chan.clear();
+    pulse_prescale.clear();
+    pulse_nsamples.clear();
+    pulse_overflow.clear();
+    pulse_underflow.clear();
+    pulse_vpeak.clear();
+    pulse_missed.clear();
+    pulse_nsb_nsa_overlap.clear();
+    pulse_sum.clear();
+    for(const auto& compton_pulse : m_faV3comptonPulse_hits_in()){ 
+        pulse_chan.push_back(compton_pulse->chan);
+        pulse_prescale.push_back(compton_pulse->prescale_factor);
+        pulse_nsamples.push_back(compton_pulse->nsamples);
+        pulse_overflow.push_back(compton_pulse->overflow);
+        pulse_underflow.push_back(compton_pulse->underflow);
+        pulse_vpeak.push_back(compton_pulse->vpeak);
+        pulse_missed.push_back(compton_pulse->pulse_missed);
+        pulse_nsb_nsa_overlap.push_back(compton_pulse->nsb_nsa_overlap);
+        pulse_sum.push_back(compton_pulse->sum);
+    }
     compton_tree->Fill();
 
     // ------------------------------------------------------------------

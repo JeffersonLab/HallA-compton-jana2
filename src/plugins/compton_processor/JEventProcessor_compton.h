@@ -22,6 +22,8 @@
 #include "FADC250HallBPulseTimeHit.h"
 #include "FADC250HallBPulsePeakHit.h"
 #include "faV3comptonAccumulatorHit.h"
+#include "faV3comptonWaveformHit.h"
+#include "faV3comptonPulseHit.h"
 #include "faV3comptonHit.h"
 
 /**
@@ -89,7 +91,9 @@ private:
     Input<FADC250HallBPulseIntegralHit> m_hallb_pulse_integral_hits_in {this};
     Input<FADC250HallBPulseTimeHit>    m_hallb_pulse_time_hits_in {this};
     Input<FADC250HallBPulsePeakHit>    m_hallb_pulse_peak_hits_in {this};
-    Input<faV3comptonAccumulatorHit>    m_faV3comptonAccumulator_hits_in {this};
+    Input<faV3comptonAccumulatorHit>   m_faV3comptonAccumulator_hits_in {this};
+    Input<faV3comptonWaveformHit>      m_faV3comptonWaveform_hits_in {this};
+    Input<faV3comptonPulseHit>         m_faV3comptonPulse_hits_in {this};
     Input<faV3comptonHit>    m_faV3compton_hits_in {this};
 
     /**
@@ -177,6 +181,15 @@ private:
     std::vector<uint32_t> acc_np_nonsa;
     std::vector<uint32_t> acc_np_miss;
 
+    std::vector<uint32_t> pulse_chan;
+    std::vector<uint32_t> pulse_prescale;
+    std::vector<uint32_t> pulse_nsamples;
+    std::vector<uint32_t> pulse_overflow;
+    std::vector<uint32_t> pulse_underflow;
+    std::vector<uint32_t> pulse_vpeak;
+    std::vector<uint32_t> pulse_missed;
+    std::vector<uint32_t> pulse_nsb_nsa_overlap;
+    std::vector<uint32_t> pulse_sum;
 
     // ROOT output objects
     TFile *m_root_output_file;                ///< ROOT file for histogram and tree storage
