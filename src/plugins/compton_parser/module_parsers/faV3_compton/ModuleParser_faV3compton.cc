@@ -384,16 +384,16 @@ std::vector<faV3comptonWaveformHit> ModuleParser_faV3compton::parseWaveform(
              pulse_number++;
          }
 
-         uint32_t tmp_sample = getBitsInRange(d, 28, 16);
-         hit.addSample(tmp_sample);
+         uint32_t tmp_sample1 = getBitsInRange(d, 28, 16);
+         hit.addSample(tmp_sample1);
          uint32_t sample_not_valid = getBitsInRange(d, 13, 13);
          if( sample_not_valid == 1 ){
-             LOG_DEBUG(GetLogger()) << std::dec << "ModuleParser_faV3compton::DEBUG - Word " << index << " 0x" << std::hex << d << std::dec<<" - data type 4 Word 2/3: start_of_pulse = " << start_of_pulse << " ; ADC sample = " << tmp_sample << " ; sample_not_valid = " << sample_not_valid << LOG_END;
+             LOG_DEBUG(GetLogger()) << std::dec << "ModuleParser_faV3compton::DEBUG - Word " << index << " 0x" << std::hex << d << std::dec<<" - data type 4 Word 2/3: start_of_pulse = " << start_of_pulse << " ; ADC sample = " << tmp_sample1 << " ; sample_not_valid = " << sample_not_valid << LOG_END;
          }
          else{
-             tmp_sample = getBitsInRange(d, 12, 0);
-             hit.addSample(tmp_sample);
-             LOG_DEBUG(GetLogger()) << std::dec << "ModuleParser_faV3compton::DEBUG - Word " << index << " 0x" << std::hex << d << std::dec<<" - data type 4 Word 2/3: start_of_pulse = " << start_of_pulse << " ; ADC sample 1 = " << tmp_sample << " ; ADC sample 2 = " << tmp_sample << LOG_END;
+             uint32_t tmp_sample2 = getBitsInRange(d, 12, 0);
+             hit.addSample(tmp_sample2);
+             LOG_DEBUG(GetLogger()) << std::dec << "ModuleParser_faV3compton::DEBUG - Word " << index << " 0x" << std::hex << d << std::dec<<" - data type 4 Word 2/3: start_of_pulse = " << start_of_pulse << " ; ADC sample 1 = " << tmp_sample1 << " ; ADC sample 2 = " << tmp_sample2 << LOG_END;
          }
          
          index++;

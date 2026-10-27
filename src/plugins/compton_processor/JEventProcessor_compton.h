@@ -191,6 +191,11 @@ private:
     std::vector<uint32_t> pulse_nsb_nsa_overlap;
     std::vector<uint32_t> pulse_sum;
 
+    std::vector<uint32_t> wv_chan;
+    std::vector<uint32_t> wv_prescale;
+    std::vector<uint32_t> wv_pulse_number;
+    std::vector<uint32_t> wv_sample;
+
     // ROOT output objects
     TFile *m_root_output_file;                ///< ROOT file for histogram and tree storage
     WaveformTreeRow m_waveform_tree_row;      ///< Data structure holding the current row for TTree filling

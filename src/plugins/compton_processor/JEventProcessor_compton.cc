@@ -143,6 +143,11 @@ void JEventProcessor_compton::Init() {
     compton_tree->Branch("pulse_nsb_nsa_overlap", &pulse_nsb_nsa_overlap);
     compton_tree->Branch("pulse_sum", &pulse_sum);
 
+    compton_tree->Branch("wv_chan", &wv_chan);
+    compton_tree->Branch("wv_prescale", &wv_prescale);
+    compton_tree->Branch("wv_pulse_number", &wv_pulse_number);
+    compton_tree->Branch("wv_sample", &wv_sample);
+
     // Optionally: Text output file for human-readable hit summaries
     m_txt_output_file.open(m_txt_output_filename().c_str());
 
@@ -348,6 +353,19 @@ void JEventProcessor_compton::ProcessSequential(const JEvent &event) {
         pulse_missed.push_back(compton_pulse->pulse_missed);
         pulse_nsb_nsa_overlap.push_back(compton_pulse->nsb_nsa_overlap);
         pulse_sum.push_back(compton_pulse->sum);
+    }
+
+    wv_chan.clear();
+    wv_prescale.clear();
+    wv_pulse_number.clear();
+    wv_sample.clear();
+
+    for(const auto& compton_wv : m_faV3comptonWaveform_hits_in()){
+        uint32_t nsamples = compton_wv->waveform.size();
+        wv_chan.insert(wv_chan.end(), nsamples, compton_wv->chan);
+        wv_prescale.insert(wv_prescale.end(), nsamples, compton_wv->prescale);
+        wv_pulse_number.insert(wv_pulse_number.end(), nsamples, compton_wv->pulse_number);
+        wv_sample.insert(wv_sample.end(), compton_wv->waveform.begin(), compton_wv->waveform.end());
     }
     compton_tree->Fill();
 
